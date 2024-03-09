@@ -11,11 +11,12 @@ class SubtitleProcessor:
 
     def remove_filler_words(self, text):
         filler_words = [
-            'um', 'uh', 'er', 'ah', 'like',
-            'okay', 'right', 'you know'
+            "um", "uh", "er", "ah",
+            "like", "okay", "right",
+            "you know"
         ]
-        pattern = r'\b(' + r'|'.join(filler_words) + r')\b'
-        return re.sub(pattern, '', text, flags=re.IGNORECASE)
+        pattern = r"\b(" + r"|".join(filler_words) + r")\b"
+        return re.sub(pattern, "", text, flags=re.IGNORECASE)
 
     def fix_common_errors(self, text):
         corrections = {
@@ -26,10 +27,7 @@ class SubtitleProcessor:
         }
         for mistake, correction in corrections.items():
             text = re.sub(
-                r'\b' + mistake + r'\b',
-                correction,
-                text,
-                flags=re.IGNORECASE
+                r"\b" + mistake + r"\b", correction, text, flags=re.IGNORECASE
             )
         return text
 
@@ -41,18 +39,18 @@ class SubtitleProcessor:
         return False
 
     def merge_lines(self, subtitle):
-        lines = subtitle.content.split('\n')
+        lines = subtitle.content.split("\n")
         merged = []
-        current_line = ''
+        current_line = ""
         for line in lines:
             line = line.strip()
             if line:
-                if self.is_complete_sentence(current_line + ' ' + line):
+                if self.is_complete_sentence(current_line + " " + line):
                     if current_line:
                         merged.append(current_line.strip())
                     current_line = line
                 else:
-                    current_line += ' ' + line
+                    current_line += " " + line
         if current_line:
             merged.append(current_line.strip())
 
@@ -61,7 +59,7 @@ class SubtitleProcessor:
             index=subtitle.index,
             start=subtitle.start,
             end=subtitle.end,
-            content='\n'.join(merged)
+            content=" ".join(merged),
         )
         return new_subtitle
 
@@ -78,11 +76,11 @@ class SubtitleProcessor:
         # 创建输出目录(如果不存在)
         os.makedirs(output_dir, exist_ok=True)
 
-        for root, dirs, files in os.walk(input_dir):
+        for root, _, files in os.walk(input_dir):
             for file in files:
-                if file.endswith('.srt'):
+                if file.endswith(".srt"):
                     input_path = os.path.join(root, file)
-                    subs = srt.parse(open(input_path, encoding='utf-8').read())
+                    subs = srt.parse(open(input_path, encoding="utf-8").read())
 
                     processed_subs = []
                     for sub in subs:
@@ -98,13 +96,13 @@ class SubtitleProcessor:
                     # 构建输出文件路径
                     output_path = self.get_output_path(input_path, output_dir)
                     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-                    with open(output_path, 'w', encoding='utf-8') as f:
+                    with open(output_path, "w", encoding="utf-8") as f:
                         f.write(srt.compose(processed_subs))
 
 
 if __name__ == "__main__":
     # 使用示例
     processor = SubtitleProcessor()
-    input_dir = '/path/to/input/subtitles/directory'
-    output_dir = '/path/to/output/directory'
+    input_dir = "/path/to/input/subtitles/directory"
+    output_dir = "/path/to/output/directory"
     processor.process_srt_files(input_dir, output_dir)
