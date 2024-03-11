@@ -23,6 +23,14 @@ class SubtitleProcessor:
             "teh": "the",
             "doesnt": "doesn't",
             "cant": "can't",
+            "mid journey": "midjourney",
+            "mid-journey": "midjourney",
+            "MeetJourney": "midjourney",
+            "meetjourney": "midjourney",
+            "Meetjourney": "midjourney",
+            "meetJourney": "midjourney",
+            "chat gbt": "chatGPT",
+            "chatgbt": "chatGPT",
             # 添加更多的纠正
         }
         for mistake, correction in corrections.items():
@@ -73,14 +81,14 @@ class SubtitleProcessor:
         return output_path
 
     def process_srt_files(self, input_dir, output_dir):
-        # 创建输出目录(如果不存在)
+        # 创建输出根目录(如果不存在)
         os.makedirs(output_dir, exist_ok=True)
 
-        for root, _, files in os.walk(input_dir):
+        for root, dirs, files in os.walk(input_dir):
             for file in files:
-                if file.endswith(".srt"):
+                if file.endswith('.srt'):
                     input_path = os.path.join(root, file)
-                    subs = srt.parse(open(input_path, encoding="utf-8").read())
+                    subs = srt.parse(open(input_path, encoding='utf-8').read())
 
                     processed_subs = []
                     for sub in subs:
@@ -93,16 +101,19 @@ class SubtitleProcessor:
                         )
                         processed_subs.append(new_sub)
 
-                    # 构建输出文件路径
-                    output_path = self.get_output_path(input_path, output_dir)
-                    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-                    with open(output_path, "w", encoding="utf-8") as f:
+                    # 构建输出文件路径,保持与输入目录结构一致
+                    relative_path = os.path.relpath(input_path, input_dir)
+                    output_path = os.path.join(output_dir, relative_path)
+                    output_dir_path = os.path.dirname(output_path)
+                    os.makedirs(output_dir_path, exist_ok=True)
+
+                    with open(output_path, 'w', encoding='utf-8') as f:
                         f.write(srt.compose(processed_subs))
 
 
 if __name__ == "__main__":
     # 使用示例
     processor = SubtitleProcessor()
-    input_dir = "/path/to/input/subtitles/directory"
-    output_dir = "/path/to/output/directory"
+    input_dir = "/home/amaozhao/Downloads/AI Art Midjourney Passive Income Make and Sell Arts (2024)"
+    output_dir = "/home/amaozhao/Downloads/tt"
     processor.process_srt_files(input_dir, output_dir)

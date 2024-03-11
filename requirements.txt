@@ -7,3 +7,4 @@ openai
 spacy
 srt
 typer
+whisperx
