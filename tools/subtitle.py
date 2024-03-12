@@ -11,7 +11,8 @@ class SubtitleProcessor:
         self.nlp = spacy.load("en_core_web_sm")
 
     def remove_filler_words(self, text):
-        filler_words = ["um", "uh", "er", "ah", "like", "okay", "right", "you know"]
+        filler_words = ["um", "uh", "er", "ah",
+                        "like", "okay", "right", "you know"]
         pattern = r"\b(" + r"|".join(filler_words) + r")\b"
         return re.sub(pattern, "", text, flags=re.IGNORECASE)
 
@@ -81,8 +82,10 @@ class SubtitleProcessor:
                     processed_subs = []
                     for sub in subs:
                         new_sub = self.merge_lines(sub)
-                        new_sub.content = self.fix_common_errors(new_sub.content)
-                        new_sub.content = self.remove_filler_words(new_sub.content)
+                        new_sub.content = self.fix_common_errors(
+                            new_sub.content)
+                        new_sub.content = self.remove_filler_words(
+                            new_sub.content)
                         processed_subs.append(new_sub)
 
                     # 构建输出文件路径,保持与输入目录结构一致

@@ -1,6 +1,7 @@
 import os
 import time
 
+from dotenv import dotenv_values
 import srt
 from openai import OpenAI
 
@@ -9,11 +10,12 @@ MAX_CHARACTERS = 7000
 
 class Translator:
     def __init__(self, input_dir, output_dir):
+        config = dotenv_values(".env")
         self.input_dir = input_dir
         self.output_dir = output_dir
         self.client = OpenAI(
-            api_key="sk-JhU8PMFqdpsefj7D49yWqk4J5eADdB9QAihZV06uurPw64BK",
-            base_url="https://api.moonshot.cn/v1",
+            api_key=config.get('API_KEY'),
+            base_url=config.get('BASE_URL'),
         )
         self.prompt = """
         你是一位专业的翻译专家并精通各种语言。我需要把指定目录下的所有 str 英文字幕文件翻译成中文字幕文件，要求如下：
@@ -36,6 +38,10 @@ class Translator:
                     self.translate_file(dirpath, output_path, filename)
                     time.sleep(1)
 
+    def replace(self, content):
+        content = content.replace('您', '你')
+        return content
+
     def translate_file(self, dirpath, output_path, filename):
         input_file = os.path.join(dirpath, filename)
         output_file = os.path.join(output_path, filename)
@@ -54,6 +60,7 @@ class Translator:
                 translation = self.translate_text(text_to_translate)
                 translations = translation.split("\n")
                 for t in translations:
+                    t = self.replace(t)
                     new_sub = srt.Subtitle(
                         index=sub.index, start=sub.start,
                         end=sub.end, content=t
