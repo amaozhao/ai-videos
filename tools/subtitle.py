@@ -11,7 +11,7 @@ class SubtitleProcessor:
         self.nlp = spacy.load("en_core_web_sm")
 
     def remove_filler_words(self, text):
-        filler_words = ["um", "uh", "er", "ah",
+        filler_words = ["um", "uh", "er", "ah", "Alright.",
                         "like", "okay", "right", "you know"]
         pattern = r"\b(" + r"|".join(filler_words) + r")\b"
         return re.sub(pattern, "", text, flags=re.IGNORECASE)
