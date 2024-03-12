@@ -1,7 +1,8 @@
 import os
 import re
-import srt
+
 import spacy
+import srt
 
 
 class SubtitleProcessor:
@@ -10,11 +11,7 @@ class SubtitleProcessor:
         self.nlp = spacy.load("en_core_web_sm")
 
     def remove_filler_words(self, text):
-        filler_words = [
-            "um", "uh", "er", "ah",
-            "like", "okay", "right",
-            "you know"
-        ]
+        filler_words = ["um", "uh", "er", "ah", "like", "okay", "right", "you know"]
         pattern = r"\b(" + r"|".join(filler_words) + r")\b"
         return re.sub(pattern, "", text, flags=re.IGNORECASE)
 
@@ -71,34 +68,21 @@ class SubtitleProcessor:
         )
         return new_subtitle
 
-    def get_output_path(self, input_path, output_dir):
-        """
-        根据输入文件路径和输出目录构建输出文件路径
-        """
-        input_dir = os.path.dirname(input_path)
-        relative_path = os.path.relpath(input_path, input_dir)
-        output_path = os.path.join(output_dir, relative_path)
-        return output_path
-
     def process_srt_files(self, input_dir, output_dir):
         # 创建输出根目录(如果不存在)
         os.makedirs(output_dir, exist_ok=True)
 
         for root, dirs, files in os.walk(input_dir):
             for file in files:
-                if file.endswith('.srt'):
+                if file.endswith(".srt"):
                     input_path = os.path.join(root, file)
-                    subs = srt.parse(open(input_path, encoding='utf-8').read())
+                    subs = srt.parse(open(input_path, encoding="utf-8").read())
 
                     processed_subs = []
                     for sub in subs:
                         new_sub = self.merge_lines(sub)
-                        new_sub.content = self.fix_common_errors(
-                            new_sub.content
-                        )
-                        new_sub.content = self.remove_filler_words(
-                            new_sub.content
-                        )
+                        new_sub.content = self.fix_common_errors(new_sub.content)
+                        new_sub.content = self.remove_filler_words(new_sub.content)
                         processed_subs.append(new_sub)
 
                     # 构建输出文件路径,保持与输入目录结构一致
@@ -107,13 +91,14 @@ class SubtitleProcessor:
                     output_dir_path = os.path.dirname(output_path)
                     os.makedirs(output_dir_path, exist_ok=True)
 
-                    with open(output_path, 'w', encoding='utf-8') as f:
+                    with open(output_path, "w", encoding="utf-8") as f:
                         f.write(srt.compose(processed_subs))
 
 
 if __name__ == "__main__":
     # 使用示例
     processor = SubtitleProcessor()
-    input_dir = "/home/amaozhao/Downloads/AI Art Midjourney Passive Income Make and Sell Arts (2024)"
+    input_dir = "/home/amaozhao/Downloads/\
+        AI Art Midjourney Passive Income Make and Sell Arts (2024)"
     output_dir = "/home/amaozhao/Downloads/tt"
     processor.process_srt_files(input_dir, output_dir)

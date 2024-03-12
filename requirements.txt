@@ -2,8 +2,8 @@ black
 deep-translator
 edge-tts
 isort
-moviepy
 openai
+pydub
 spacy
 srt
 typer
