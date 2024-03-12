@@ -7,7 +7,7 @@ from openai import OpenAI
 MAX_CHARACTERS = 7000
 
 
-class SubtitleTranslator:
+class Translator:
     def __init__(self, input_dir, output_dir):
         self.input_dir = input_dir
         self.output_dir = output_dir
@@ -55,7 +55,8 @@ class SubtitleTranslator:
                 translations = translation.split("\n")
                 for t in translations:
                     new_sub = srt.Subtitle(
-                        index=sub.index, start=sub.start, end=sub.end, content=t
+                        index=sub.index, start=sub.start,
+                        end=sub.end, content=t
                     )
                     output_subs.append(new_sub)
                 text_to_translate = new_text
@@ -95,5 +96,5 @@ if __name__ == "__main__":
     input_dir = "/home/amaozhao/workspace/ai-videos/test"
     output_dir = "/home/amaozhao/workspace/ai-videos/sub-output"
 
-    translator = SubtitleTranslator(input_dir, output_dir)
+    translator = Translator(input_dir, output_dir)
     translator.translate_subtitles()
