@@ -12,7 +12,7 @@ class Translator:
         self.input_dir = input_dir
         self.output_dir = output_dir
         self.client = OpenAI(
-            api_key="sk-JhU8PMFqdpsefj7D49yWqk4J5eADdB9QAihZV06uurPw64BK",
+            api_key="sk-JhU8PMFqdpsefj7D49yWqk4J5eADdB9QAihZV06uurPw64BKa",
             base_url="https://api.moonshot.cn/v1",
         )
         self.prompt = """
