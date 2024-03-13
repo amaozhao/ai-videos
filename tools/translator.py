@@ -1,6 +1,7 @@
 import os
 import time
 
+from deep_translator import DeeplTranslator
 from dotenv import dotenv_values
 import srt
 from openai import OpenAI
@@ -9,7 +10,7 @@ MAX_CHARACTERS = 7000
 
 
 class Translator:
-    def __init__(self, input_dir, output_dir):
+    def __init__(self, input_dir, output_dir, service=None):
         config = dotenv_values(".env")
         self.input_dir = input_dir
         self.output_dir = output_dir
@@ -17,16 +18,8 @@ class Translator:
             api_key=config.get('API_KEY'),
             base_url=config.get('BASE_URL'),
         )
-        self.prompt = """
-        你是一位专业的翻译专家并精通各种语言。我需要把指定目录下的所有 str 英文字幕文件翻译成中文字幕文件，要求如下：
-        1. 不要自行创建新的字幕内容;
-        2. 只输出翻译后的中文文本,不要输出其他任何内容;
-        3. 如何源字幕中出现专业名词，保留它;
-        4. 如果源字幕中有错误，需要你更正它;
-        5. 在翻译过程中请尽量使用简洁的语言,避免冗余;
-        6. 翻译结果中尽量不要出现`您`, 改用 `你`;
-        7. 不要在返回的内容开头添加任何不是字幕的内容,直接开始翻译, 例如: `好的, 我们现在开始翻译`, `我们开始翻译`等等。
-        """
+        self.dl_key = config.get('DEEPL_KEY')
+        self.service = service or 'chatGPT'
 
     def translate_subtitles(self):
         for dirpath, dirnames, filenames in os.walk(self.input_dir):
@@ -85,15 +78,39 @@ class Translator:
             f.write(srt.compose(output_subs))
 
     def translate_text(self, text):
+        if self.service == 'chatGPT':
+            return self.chatgpt_translate(text)
+        if self.service == 'deepl':
+            return DeeplTranslator(
+                api_key=self.dl_key,
+                source="en",
+                target="zh",
+                use_free_api=True
+            ).translate(text)
+
+    def chatgpt_translate(self, text):
+        _prompt = """
+        你是一位专业的翻译专家,精通英语和中文。现在需要你将指定目录下的所有英文字幕文件翻译成中文字幕文件,注意以下要求:
+        1. 仅翻译现有内容,不添加新内容。
+        2. 只输出翻译后的中文文本,不输出其他内容。
+        3. 遇到专业名词时,保留原文。
+        4. 如果源字幕有错误,请予以更正。
+        5. 使用简洁语言,避免冗余。
+        6. 使用"你"代替"您"。
+        7. 直接开始翻译,不要添加任何前言。
+        我的原文是:
+        """
+        prompt = '\n'.join(_prompt.split('\n')).replace(' ', '')
+        prompt += text
         try:
             response = self.client.chat.completions.create(
                 messages=[
-                    {"role": "system", "content": self.prompt},
-                    {"role": "user", "content": text},
+                    {"role": "user", "content": prompt},
                 ],
                 model="moonshot-v1-8k",
             )
-            translation = response.choices[0].message.content.strip()
+            content = response.choices[0].message.content
+            translation = content.strip() if content else text.strip()
         except Exception as e:
             print(f"翻译出错: {e}")
             translation = text

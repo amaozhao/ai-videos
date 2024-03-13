@@ -16,8 +16,10 @@ def reset_path(
 @app.command()
 def translate_path(
         input_dir: str,
-        output_dir: str = '~/Downloads/transltion'):
-    translator = Translator(input_dir, output_dir)
+        output_dir: str = '~/Downloads/transltion',
+        service: str = 'deepl'
+):
+    translator = Translator(input_dir, output_dir, service=service)
     translator.translate_subtitles()
 
 
