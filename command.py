@@ -1,5 +1,5 @@
 import typer
-from tools import SubtitleProcessor, Translator, TTSconvert
+from tools import SubtitleProcessor, Transcribe, Translator, TTSconvert
 
 
 app = typer.Typer()
@@ -29,6 +29,14 @@ def tts_path(
         output_dir: str = '~/Downloads/tts'):
     tts = TTSconvert(input_dir, output_dir)
     tts.convert_path()
+
+
+@app.command()
+def transcribe_path(
+        audio: str,
+        model: str = 'medium'):
+    transcribe = Transcribe(audio=audio, model=model)
+    transcribe.run()
 
 
 if __name__ == "__main__":
