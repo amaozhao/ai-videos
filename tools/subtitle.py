@@ -40,7 +40,11 @@ class SubtitleProcessor:
     def is_complete_sentence(self, text):
         doc = self.nlp(text)
         sentences = list(doc.sents)
-        if len(sentences) == 1 and sentences[0].text.strip() == text.strip():
+        if (
+            len(sentences) == 1 and sentences[0].text.strip() == text.strip()
+        ) and (
+                text.endswith('.') or text.endswith(',') or
+                text.endswith('?') or text.endswith(';')):
             return True
         return False
 
@@ -101,7 +105,6 @@ class SubtitleProcessor:
 if __name__ == "__main__":
     # 使用示例
     processor = SubtitleProcessor()
-    input_dir = "/home/amaozhao/Downloads/\
-        AI Art Midjourney Passive Income Make and Sell Arts (2024)"
-    output_dir = "/home/amaozhao/Downloads/tt"
+    input_dir = "/home/amaozhao/Downloads/tt"
+    output_dir = "/home/amaozhao/Downloads/tt1"
     processor.process_srt_files(input_dir, output_dir)

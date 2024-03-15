@@ -1,12 +1,10 @@
 import os
 import time
 
-from deep_translator import DeeplTranslator
+from deep_translator import DeeplTranslator, GoogleTranslator
 from dotenv import dotenv_values
 import srt
 from openai import OpenAI
-
-MAX_CHARACTERS = 7000
 
 
 class Translator:
@@ -36,6 +34,13 @@ class Translator:
         content = content.replace('您', '你')
         return content
 
+    def chunk_subs(self, subs):
+        chunk_size = 5
+        chunked_subs = [
+            subs[i: i + chunk_size] for i in range(0, len(subs), chunk_size)
+        ]
+        return chunked_subs
+
     def translate_file(self, dirpath, output_path, filename):
         input_file = os.path.join(dirpath, filename)
         output_file = os.path.join(output_path, filename)
@@ -43,36 +48,46 @@ class Translator:
         with open(input_file, "r", encoding="utf-8") as f:
             subs = list(srt.parse(f.read()))
 
-        output_subs = []
-        text_to_translate = ""
+        chunk_subs = self.chunk_subs(subs)
 
-        for sub in subs:
-            new_text = sub.content
-            if len(text_to_translate) + len(new_text) + 1 <= MAX_CHARACTERS:
-                text_to_translate += "\n" + new_text
-            else:
-                translation = self.translate_text(text_to_translate)
-                translations = translation.split("\n")
-                for t in translations:
-                    t = self.replace(t)
+        output_subs = []
+
+        for ch_idx, chunks in enumerate(chunk_subs):
+            joined_chunks = '||'.join([c.content for c in chunks])
+            print(f'Start tranlate for {ch_idx} in {len(chunk_subs)}')
+            translated_chunks = self.translate_text(joined_chunks)
+            translations = translated_chunks.split('||')
+            if len(chunks) != len(translations):
+                print(f'翻译出错: {translated_chunks}')
+                print(f'原文: {joined_chunks}')
+                for t in chunks:
                     new_sub = srt.Subtitle(
-                        index=sub.index, start=sub.start,
-                        end=sub.end, content=t
+                        index=t.index,
+                        start=t.start,
+                        end=t.end,
+                        content=t.content
                     )
                     output_subs.append(new_sub)
-                text_to_translate = new_text
-
-        if text_to_translate:
-            translation = self.translate_text(text_to_translate)
-            translations = translation.split("\n")
+                continue
             for idx, t in enumerate(translations):
+                t = self.replace(t)
                 new_sub = srt.Subtitle(
-                    index=subs[idx].index,
-                    start=subs[idx].start,
-                    end=subs[idx].end,
+                    index=subs[idx + ch_idx * 5].index,
+                    start=subs[idx + ch_idx * 5].start,
+                    end=subs[idx + ch_idx * 5].end,
                     content=t + "\n" + subs[idx].content,
                 )
                 output_subs.append(new_sub)
+        
+        # for sub in subs:
+        #     translated = self.translate_text(sub.content)
+        #     new_sub = srt.Subtitle(
+        #         index=sub.index,
+        #         start=sub.start,
+        #         end=sub.end,
+        #         content=self.replace(translated) + '\n' + sub.content
+        #     )
+        #     output_subs.append(new_sub)
 
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(srt.compose(output_subs))
@@ -86,6 +101,11 @@ class Translator:
                 source="en",
                 target="zh",
                 use_free_api=True
+            ).translate(text)
+        if self.service == 'google':
+            return GoogleTranslator(
+                source="en",
+                target='zh-CN',
             ).translate(text)
 
     def chatgpt_translate(self, text):
@@ -121,5 +141,5 @@ if __name__ == "__main__":
     input_dir = "/home/amaozhao/workspace/ai-videos/test"
     output_dir = "/home/amaozhao/workspace/ai-videos/sub-output"
 
-    translator = Translator(input_dir, output_dir)
+    translator = Translator(input_dir, output_dir, service='google')
     translator.translate_subtitles()
