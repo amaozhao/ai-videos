@@ -11,8 +11,7 @@ class SubtitleProcessor:
         self.nlp = spacy.load("en_core_web_sm")
 
     def remove_filler_words(self, text):
-        filler_words = ["um", "uh", "er", "ah", "Alright.",
-                        "like", "okay", "right", "you know"]
+        filler_words = ["um", "uh", "er", "ah"]
         pattern = r"\b(" + r"|".join(filler_words) + r")\b"
         return re.sub(pattern, "", text, flags=re.IGNORECASE)
 
@@ -38,40 +37,49 @@ class SubtitleProcessor:
         return text
 
     def is_complete_sentence(self, text):
+        text = text.strip()
         doc = self.nlp(text)
-        sentences = list(doc.sents)
-        if (
-            len(sentences) == 1 and sentences[0].text.strip() == text.strip()
-        ) and (
-                text.endswith('.') or text.endswith(',') or
-                text.endswith('?') or text.endswith(';')):
+        for token in doc:
+            # 检查是否存在一个词形被标记为谓语（ROOT）
+            if token.dep_ == "ROOT":
+                # 寻找主语（nsubj）
+                subj = [child for child in token.children
+                        if child.dep_ == "nsubj"]
+                # 如果存在主语，那么这是一个完整的句子
+                if subj:
+                    return True
+        if text.endswith(('.', ';', '?')):
             return True
         return False
 
-    def merge_lines(self, subtitle):
-        lines = subtitle.content.split("\n")
-        merged = []
-        current_line = ""
-        for line in lines:
-            line = line.strip()
-            if line:
-                if self.is_complete_sentence(current_line + " " + line):
-                    if current_line:
-                        merged.append(current_line.strip())
-                    current_line = line
-                else:
-                    current_line += " " + line
-        if current_line:
-            merged.append(current_line.strip())
-
-        # 创建一个新的字幕条目,保留原始时间戳
-        new_subtitle = srt.Subtitle(
-            index=subtitle.index,
-            start=subtitle.start,
-            end=subtitle.end,
-            content=" ".join(merged),
-        )
-        return new_subtitle
+    def merge_subtitles(self, subtitles):
+        sub_list = []
+        processed_subs = []
+        result_sub = []
+        for sub in subtitles:
+            if sub.content in ('.', ',', '?'):
+                continue
+            if self.is_complete_sentence(sub.content):
+                processed_subs.append([sub])
+            else:
+                sub_list.append(sub)
+                _text = [s.content for s in sub_list]
+                _text = ' '.join(_text)
+                if self.is_complete_sentence(_text.strip()):
+                    processed_subs.append(sub_list)
+                    sub_list = []
+        for idx, s_l in enumerate(processed_subs):
+            text = ' '.join([_.content for _ in s_l])
+            text = self.fix_common_errors(text)
+            text = self.remove_filler_words(text)
+            new_sub = srt.Subtitle(
+                index=idx + 1,
+                start=s_l[0].start,
+                end=s_l[-1].end,
+                content=text
+            )
+            result_sub.append(new_sub)
+        return result_sub
 
     def process_srt_files(self, input_dir, output_dir):
         # 创建输出根目录(如果不存在)
@@ -82,15 +90,7 @@ class SubtitleProcessor:
                 if file.endswith(".srt"):
                     input_path = os.path.join(root, file)
                     subs = srt.parse(open(input_path, encoding="utf-8").read())
-
-                    processed_subs = []
-                    for sub in subs:
-                        new_sub = self.merge_lines(sub)
-                        new_sub.content = self.fix_common_errors(
-                            new_sub.content)
-                        new_sub.content = self.remove_filler_words(
-                            new_sub.content)
-                        processed_subs.append(new_sub)
+                    processed_subs = self.merge_subtitles(subs)
 
                     # 构建输出文件路径,保持与输入目录结构一致
                     relative_path = os.path.relpath(input_path, input_dir)
@@ -105,6 +105,6 @@ class SubtitleProcessor:
 if __name__ == "__main__":
     # 使用示例
     processor = SubtitleProcessor()
-    input_dir = "/home/amaozhao/Downloads/tt"
-    output_dir = "/home/amaozhao/Downloads/tt1"
+    input_dir = "/Users/amaozhao/workspace/ai-videos/test/"
+    output_dir = "/Users/amaozhao/workspace/ai-videos/output/"
     processor.process_srt_files(input_dir, output_dir)

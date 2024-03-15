@@ -78,7 +78,7 @@ class Translator:
                     content=t + "\n" + subs[idx].content,
                 )
                 output_subs.append(new_sub)
-        
+
         # for sub in subs:
         #     translated = self.translate_text(sub.content)
         #     new_sub = srt.Subtitle(
