@@ -38,16 +38,6 @@ class SubtitleProcessor:
 
     def is_complete_sentence(self, text):
         text = text.strip()
-        # doc = self.nlp(text)
-        # for token in doc:
-        #     # 检查是否存在一个词形被标记为谓语（ROOT）
-        #     if token.dep_ == "ROOT":
-        #         # 寻找主语（nsubj）
-        #         subj = [child for child in token.children
-        #                 if child.dep_ == "nsubj"]
-        #         # 如果存在主语，那么这是一个完整的句子
-        #         if subj:
-        #             return True
         if text.endswith(('.', ';', '?')):
             return True
         return False
