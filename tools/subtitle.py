@@ -38,16 +38,16 @@ class SubtitleProcessor:
 
     def is_complete_sentence(self, text):
         text = text.strip()
-        doc = self.nlp(text)
-        for token in doc:
-            # 检查是否存在一个词形被标记为谓语（ROOT）
-            if token.dep_ == "ROOT":
-                # 寻找主语（nsubj）
-                subj = [child for child in token.children
-                        if child.dep_ == "nsubj"]
-                # 如果存在主语，那么这是一个完整的句子
-                if subj:
-                    return True
+        # doc = self.nlp(text)
+        # for token in doc:
+        #     # 检查是否存在一个词形被标记为谓语（ROOT）
+        #     if token.dep_ == "ROOT":
+        #         # 寻找主语（nsubj）
+        #         subj = [child for child in token.children
+        #                 if child.dep_ == "nsubj"]
+        #         # 如果存在主语，那么这是一个完整的句子
+        #         if subj:
+        #             return True
         if text.endswith(('.', ';', '?')):
             return True
         return False
@@ -59,15 +59,18 @@ class SubtitleProcessor:
         for sub in subtitles:
             if sub.content in ('.', ',', '?'):
                 continue
-            if self.is_complete_sentence(sub.content):
-                processed_subs.append([sub])
-            else:
+            if sub_list:
                 sub_list.append(sub)
-                _text = [s.content for s in sub_list]
-                _text = ' '.join(_text)
-                if self.is_complete_sentence(_text.strip()):
+                check_sentence = ' '.join([s.content for s in sub_list])
+                if self.is_complete_sentence(check_sentence):
                     processed_subs.append(sub_list)
                     sub_list = []
+            else:
+                if self.is_complete_sentence(sub.content):
+                    processed_subs.append([sub])
+                else:
+                    sub_list.append(sub)
+
         for idx, s_l in enumerate(processed_subs):
             text = ' '.join([_.content for _ in s_l])
             text = self.fix_common_errors(text)
