@@ -20,15 +20,14 @@ class Transcribe:
     def __init__(
             self,
             audio,
-            model="small",
+            model="medium",
             model_dir=None,
-            btch_size=8,
-            output_dir='.',
+            batch_size=8,
             verbose=True,
             task='transcribe',
-            language=None,
+            language="en",
             output_format='srt',
-            compute_type='init8',
+            compute_type='int8',
             # alignment params
             align_model=None,
             interpolate_method="nearest",
@@ -47,7 +46,7 @@ class Transcribe:
             beam_size=5,
             patience=1.0,
             length_penalty=1.0,
-            suppress_tokens=-1,
+            suppress_tokens="-1",
             suppress_numerals=None,
             initial_prompt=None,
             condition_on_previous_text=False,
@@ -66,8 +65,9 @@ class Transcribe:
         self.audio = audio
         self.model = model
         self.model_dir = model_dir
-        self.btch_size = btch_size
-        self.output_dir = output_dir
+        self.device = "cpu"
+        self.device_index = 0
+        self.batch_size = batch_size
         self.verbose = verbose
         self.task = task
         self.language = language
@@ -109,7 +109,6 @@ class Transcribe:
         self.hf_token = hf_token
         self.print_progress = print_progress
         # model_flush: bool = args.pop("model_flush")
-        os.makedirs(output_dir, exist_ok=True)
         if task == "translate":
             # translation cannot be aligned
             self.no_align = True
@@ -144,7 +143,7 @@ class Transcribe:
             self.faster_whisper_threads = self.threads
         self.transcribe_model = self.get_model()
         self.align_model, self.align_metadata = self.get_align_model()
-        self.writer = get_writer(self.output_format, self.output_dir)
+        # self.writer = get_writer(self.output_format, self.output_dir)
 
     def get_asr_options(self):
         return {
@@ -165,7 +164,7 @@ class Transcribe:
 
     def get_model(self):
         model = load_model(
-            self.model_name,
+            self.model,
             device=self.device,
             device_index=self.device_index,
             download_root=self.model_dir,
@@ -189,20 +188,19 @@ class Transcribe:
         )
         return align_model, align_metadata
 
-    def transcription(self):
+    def transcription(self, file):
         # Part 1: VAD & ASR Loop
         results = []
-        for audio_path in self.audio:
-            audio = load_audio(audio_path)
-            # >> VAD & ASR
-            print(">>Performing transcription...")
-            result = self.transcribe_model.transcribe(
-                audio,
-                batch_size=self.batch_size,
-                chunk_size=self.chunk_size,
-                print_progress=self.print_progress
-            )
-            results.append((result, audio_path))
+        audio = load_audio(file)
+        # >> VAD & ASR
+        print(">>Performing transcription...")
+        result = self.transcribe_model.transcribe(
+            audio,
+            batch_size=self.batch_size,
+            chunk_size=self.chunk_size,
+            print_progress=self.print_progress
+        )
+        results.append((result, file))
 
         # Unload Whisper and VAD
         # del model
@@ -212,16 +210,15 @@ class Transcribe:
 
     def align(self, results):
         # Part 2: Align Loop
-        results = []
+        align_result = []
         if not self.no_align:
-            tmp_results = results
-            for result, audio_path in tmp_results:
+            for result, audio_path in results:
                 # >> Align
-                if len(tmp_results) > 1:
+                if len(results) > 1:
                     input_audio = audio_path
                 else:
                     # lazily load audio from part 1
-                    input_audio = self.audio
+                    input_audio = load_audio(audio_path)
 
                 if self.align_model is not None and len(
                         result["segments"]) > 0:
@@ -253,11 +250,11 @@ class Transcribe:
                         print_progress=self.print_progress
                     )
 
-                results.append((result, audio_path))
+                align_result.append((result, audio_path))
                 # Unload align model
                 gc.collect()
                 torch.cuda.empty_cache()
-        return results
+        return align_result
 
     def save(self, results):
         word_options = ["highlight_words", "max_line_count", "max_line_width"]
@@ -272,9 +269,19 @@ class Transcribe:
 
         # >> Write
         for result, audio_path in results:
+            writer = get_writer(
+                self.output_format,
+                os.path.dirname(audio_path)
+            )
             result["language"] = self.align_language
-            self.writer(result, audio_path, writer_args)
+            writer(result, audio_path, writer_args)
 
     def run(self):
-        results = self.align(self.transcription())
-        self.save(results)
+        for root, dirs, files in os.walk(self.audio):
+            for audio in files:
+                if audio.endswith('.mp4'):
+                    results = self.align(
+                        self.transcription(os.path.join(root, audio))
+                    )
+                    print(1111, results)
+                    self.save(results)

@@ -1,5 +1,5 @@
 import typer
-from tools import SubtitleProcessor, Transcribe, Translator, TTSconvert
+from tools import SubtitleProcessor, Translator, TTSconvert
 
 
 app = typer.Typer()
@@ -35,6 +35,7 @@ def tts_path(
 def transcribe_path(
         audio: str,
         model: str = 'medium'):
+    from tools import Transcribe
     transcribe = Transcribe(audio=audio, model=model)
     transcribe.run()
 

@@ -1,14 +1,10 @@
 import os
 import re
 
-import spacy
 import srt
 
 
 class SubtitleProcessor:
-    def __init__(self):
-        # 初始化句子检测器
-        self.nlp = spacy.load("en_core_web_sm")
 
     def remove_filler_words(self, text):
         filler_words = ["um", "uh", "er", "ah"]
