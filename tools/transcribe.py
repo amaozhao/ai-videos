@@ -283,5 +283,4 @@ class Transcribe:
                     results = self.align(
                         self.transcription(os.path.join(root, audio))
                     )
-                    print(1111, results)
                     self.save(results)
