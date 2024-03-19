@@ -18,6 +18,7 @@ class Translator:
         )
         self.dl_key = config.get('DEEPL_KEY')
         self.service = service or 'chatGPT'
+        self.chunk_size = 8
 
     def translate_subtitles(self):
         for dirpath, dirnames, filenames in os.walk(self.input_dir):
@@ -35,9 +36,9 @@ class Translator:
         return content
 
     def chunk_subs(self, subs):
-        chunk_size = 5
         chunked_subs = [
-            subs[i: i + chunk_size] for i in range(0, len(subs), chunk_size)
+            subs[i: i + self.chunk_size] for i in range(
+                0, len(subs), self.chunk_size)
         ]
         return chunked_subs
 
@@ -47,6 +48,7 @@ class Translator:
 
         with open(input_file, "r", encoding="utf-8") as f:
             subs = list(srt.parse(f.read()))
+        print(f'start translate: {input_file}')
 
         chunk_subs = self.chunk_subs(subs)
 
@@ -54,40 +56,30 @@ class Translator:
 
         for ch_idx, chunks in enumerate(chunk_subs):
             joined_chunks = '||'.join([c.content for c in chunks])
-            print(f'Start tranlate for {ch_idx} in {len(chunk_subs)}')
             translated_chunks = self.translate_text(joined_chunks)
             translations = translated_chunks.split('||')
             if len(chunks) != len(translations):
-                print(f'翻译出错: {translated_chunks}')
-                print(f'原文: {joined_chunks}')
                 for t in chunks:
+                    _translated = self.translate_text(t.content)
+                    _translated = self.replace(_translated)
                     new_sub = srt.Subtitle(
                         index=t.index,
                         start=t.start,
                         end=t.end,
-                        content=t.content
+                        content=_translated + "\n" + t.content
                     )
                     output_subs.append(new_sub)
-                continue
-            for idx, t in enumerate(translations):
-                t = self.replace(t)
-                new_sub = srt.Subtitle(
-                    index=subs[idx + ch_idx * 5].index,
-                    start=subs[idx + ch_idx * 5].start,
-                    end=subs[idx + ch_idx * 5].end,
-                    content=t + "\n" + subs[idx].content,
-                )
-                output_subs.append(new_sub)
-
-        # for sub in subs:
-        #     translated = self.translate_text(sub.content)
-        #     new_sub = srt.Subtitle(
-        #         index=sub.index,
-        #         start=sub.start,
-        #         end=sub.end,
-        #         content=self.replace(translated) + '\n' + sub.content
-        #     )
-        #     output_subs.append(new_sub)
+            else:
+                for idx, t in enumerate(translations):
+                    t = self.replace(t)
+                    new_sub = srt.Subtitle(
+                        index=subs[idx + ch_idx * self.chunk_size].index,
+                        start=subs[idx + ch_idx * self.chunk_size].start,
+                        end=subs[idx + ch_idx * self.chunk_size].end,
+                        content=t + "\n" + subs[
+                            idx + ch_idx * self.chunk_size].content,
+                    )
+                    output_subs.append(new_sub)
 
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(srt.compose(output_subs))

@@ -17,17 +17,33 @@ class SubtitleProcessor:
 
     def fix_common_errors(self, text):
         corrections = {
-            "teh": "the",
-            "doesnt": "doesn't",
+            "DID": "D-ID",
+            "Kyber": "Kaiber",
+            "Kyber AI": "Kaiber AI",
+            "MeetJourney": "MidJourney",
+            "Meetjourney": "MidJourney",
             "cant": "can't",
-            "mid journey": "midjourney",
-            "mid-journey": "midjourney",
-            "MeetJourney": "midjourney",
-            "meetjourney": "midjourney",
-            "Meetjourney": "midjourney",
-            "meetJourney": "midjourney",
+            " chad ": " chat ",
+            "chat DPT": "chatGPT",
+            "chat GPD": "chatGPT",
+            "chat LGBT": "chatGPT",
+            "chat dbt": "chatGPT",
+            "chat dvd": "chatGPT",
+            "chat gbd": "chatGPT",
             "chat gbt": "chatGPT",
+            "chat gpt": "chatGPT",
+            "chat jpg": "chatGPT",
+            "chat jpt": "chatGPT",
+            "chatDPG": "chatGPT",
+            "chatDPT": "chatGPT",
             "chatgbt": "chatGPT",
+            "doesnt": "doesn't",
+            "meetJourney": "MidJourney",
+            "meetjourney": "MidJourney",
+            "mid journey": "MidJourney",
+            "mid-journey": "MidJourney",
+            "midjourney": "MidJourney",
+            "teh": "the",
             # 添加更多的纠正
         }
         for mistake, correction in corrections.items():
@@ -98,6 +114,6 @@ class SubtitleProcessor:
 if __name__ == "__main__":
     # 使用示例
     processor = SubtitleProcessor()
-    input_dir = "/Users/amaozhao/workspace/ai-videos/test/"
+    input_dir = "/home/amaozhao/Downloads/videos"
     output_dir = "/Users/amaozhao/workspace/ai-videos/output/"
     processor.process_srt_files(input_dir, output_dir)
