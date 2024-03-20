@@ -16,9 +16,12 @@ class Translator:
             api_key=config.get('API_KEY'),
             base_url=config.get('BASE_URL'),
         )
+        # self.gpt_model = "moonshot-v1-8k"
+        self.gpt_model = config.get('GPT_MODEL', 'gpt-3.5-turbo')
         self.dl_key = config.get('DEEPL_KEY')
         self.service = service or 'chatGPT'
         self.chunk_size = 8
+        self.delimiter = '||'
 
     def translate_subtitles(self):
         for dirpath, dirnames, filenames in os.walk(self.input_dir):
@@ -55,9 +58,9 @@ class Translator:
         output_subs = []
 
         for ch_idx, chunks in enumerate(chunk_subs):
-            joined_chunks = '||'.join([c.content for c in chunks])
+            joined_chunks = self.delimiter.join([c.content for c in chunks])
             translated_chunks = self.translate_text(joined_chunks)
-            translations = translated_chunks.split('||')
+            translations = translated_chunks.split(self.delimiter)
             if len(chunks) != len(translations):
                 for t in chunks:
                     _translated = self.translate_text(t.content)
@@ -119,10 +122,11 @@ class Translator:
                 messages=[
                     {"role": "user", "content": prompt},
                 ],
-                model="moonshot-v1-8k",
+                model=self.gpt_model,
             )
             content = response.choices[0].message.content
             translation = content.strip() if content else text.strip()
+            time.sleep(1)
         except Exception as e:
             print(f"翻译出错: {e}")
             translation = text

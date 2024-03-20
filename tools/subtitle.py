@@ -50,7 +50,7 @@ class SubtitleProcessor:
 
     def is_complete_sentence(self, text):
         text = text.strip()
-        if text.endswith(('.', ';', '?')):
+        if re.search(r'[,;.?!]$', text):
             return True
         return False
 

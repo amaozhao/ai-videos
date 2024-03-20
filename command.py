@@ -24,6 +24,19 @@ def translate_path(
 
 
 @app.command()
+def chain_translate(
+        input_dir: str,
+        temp_dir: str = '/home/amaozhao/Downloads/tt',
+        output_dir: str = '/home/amaozhao/Downloads/translation',
+        service: str = 'google'
+):
+    processor = SubtitleProcessor()
+    processor.process_srt_files(input_dir, temp_dir)
+    translator = Translator(temp_dir, output_dir, service=service)
+    translator.translate_subtitles()
+
+
+@app.command()
 def tts_path(
         input_dir: str,
         output_dir: str = '/home/amaozhao/Downloads/tts'):
