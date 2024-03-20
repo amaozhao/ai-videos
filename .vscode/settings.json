@@ -1,3 +1,6 @@
 {
-    "python.analysis.autoImportCompletions": true
+    "python.analysis.autoImportCompletions": true,
+    "flake8.args": [
+        "--max-line-length=120"
+    ]
 }
