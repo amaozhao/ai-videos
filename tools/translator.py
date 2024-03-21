@@ -126,7 +126,7 @@ class Translator:
             )
             content = response.choices[0].message.content
             translation = content.strip() if content else text.strip()
-            time.sleep(1)
+            time.sleep(20)
         except Exception as e:
             print(f"翻译出错: {e}")
             translation = text
