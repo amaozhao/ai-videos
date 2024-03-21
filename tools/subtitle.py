@@ -50,7 +50,7 @@ class SubtitleProcessor:
 
     def is_complete_sentence(self, text):
         text = text.strip()
-        if re.search(r'[,;.?!]$', text):
+        if re.search(r"[,;.?!]$", text):
             return True
         return False
 
@@ -59,11 +59,11 @@ class SubtitleProcessor:
         processed_subs = []
         result_sub = []
         for sub in subtitles:
-            if sub.content in ('.', ',', '?'):
+            if sub.content in (".", ",", "?"):
                 continue
             if sub_list:
                 sub_list.append(sub)
-                check_sentence = ' '.join([s.content for s in sub_list])
+                check_sentence = " ".join([s.content for s in sub_list])
                 if self.is_complete_sentence(check_sentence):
                     processed_subs.append(sub_list)
                     sub_list = []
@@ -74,14 +74,11 @@ class SubtitleProcessor:
                     sub_list.append(sub)
 
         for idx, s_l in enumerate(processed_subs):
-            text = ' '.join([_.content for _ in s_l])
+            text = " ".join([_.content for _ in s_l])
             text = self.fix_common_errors(text)
             text = self.remove_filler_words(text)
             new_sub = srt.Subtitle(
-                index=idx + 1,
-                start=s_l[0].start,
-                end=s_l[-1].end,
-                content=text
+                index=idx + 1, start=s_l[0].start, end=s_l[-1].end, content=text
             )
             result_sub.append(new_sub)
         return result_sub

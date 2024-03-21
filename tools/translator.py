@@ -13,15 +13,15 @@ class Translator:
         self.input_dir = input_dir
         self.output_dir = output_dir
         self.client = OpenAI(
-            api_key=config.get('API_KEY'),
-            base_url=config.get('BASE_URL'),
+            api_key=config.get("API_KEY"),
+            base_url=config.get("BASE_URL"),
         )
         # self.gpt_model = "moonshot-v1-8k"
-        self.gpt_model = config.get('GPT_MODEL', 'gpt-3.5-turbo')
-        self.dl_key = config.get('DEEPL_KEY')
-        self.service = service or 'chatGPT'
+        self.gpt_model = config.get("GPT_MODEL", "gpt-3.5-turbo")
+        self.dl_key = config.get("DEEPL_KEY")
+        self.service = service or "chatGPT"
         self.chunk_size = 8
-        self.delimiter = '||'
+        self.delimiter = "||"
 
     def translate_subtitles(self):
         for dirpath, dirnames, filenames in os.walk(self.input_dir):
@@ -35,13 +35,12 @@ class Translator:
                     time.sleep(1)
 
     def replace(self, content):
-        content = content.replace('您', '你')
+        content = content.replace("您", "你")
         return content
 
     def chunk_subs(self, subs):
         chunked_subs = [
-            subs[i: i + self.chunk_size] for i in range(
-                0, len(subs), self.chunk_size)
+            subs[i : i + self.chunk_size] for i in range(0, len(subs), self.chunk_size)
         ]
         return chunked_subs
 
@@ -51,7 +50,7 @@ class Translator:
 
         with open(input_file, "r", encoding="utf-8") as f:
             subs = list(srt.parse(f.read()))
-        print(f'start translate: {input_file}')
+        print(f"start translate: {input_file}")
 
         chunk_subs = self.chunk_subs(subs)
 
@@ -69,7 +68,7 @@ class Translator:
                         index=t.index,
                         start=t.start,
                         end=t.end,
-                        content=_translated + "\n" + t.content
+                        content=_translated + "\n" + t.content,
                     )
                     output_subs.append(new_sub)
             else:
@@ -79,8 +78,7 @@ class Translator:
                         index=subs[idx + ch_idx * self.chunk_size].index,
                         start=subs[idx + ch_idx * self.chunk_size].start,
                         end=subs[idx + ch_idx * self.chunk_size].end,
-                        content=t + "\n" + subs[
-                            idx + ch_idx * self.chunk_size].content,
+                        content=t + "\n" + subs[idx + ch_idx * self.chunk_size].content,
                     )
                     output_subs.append(new_sub)
 
@@ -88,19 +86,16 @@ class Translator:
             f.write(srt.compose(output_subs))
 
     def translate_text(self, text):
-        if self.service == 'chatGPT':
+        if self.service == "chatGPT":
             return self.chatgpt_translate(text)
-        if self.service == 'deepl':
+        if self.service == "deepl":
             return DeeplTranslator(
-                api_key=self.dl_key,
-                source="en",
-                target="zh",
-                use_free_api=True
+                api_key=self.dl_key, source="en", target="zh", use_free_api=True
             ).translate(text)
-        if self.service == 'google':
+        if self.service == "google":
             return GoogleTranslator(
                 source="en",
-                target='zh-CN',
+                target="zh-CN",
             ).translate(text)
 
     def chatgpt_translate(self, text):
@@ -115,7 +110,7 @@ class Translator:
         7. 直接开始翻译,不要添加任何前言。
         我的原文是:
         """
-        prompt = '\n'.join(_prompt.split('\n')).replace(' ', '')
+        prompt = "\n".join(_prompt.split("\n")).replace(" ", "")
         prompt += text
         try:
             response = self.client.chat.completions.create(
@@ -137,5 +132,5 @@ if __name__ == "__main__":
     input_dir = "/home/amaozhao/workspace/ai-videos/test"
     output_dir = "/home/amaozhao/workspace/ai-videos/sub-output"
 
-    translator = Translator(input_dir, output_dir, service='google')
+    translator = Translator(input_dir, output_dir, service="google")
     translator.translate_subtitles()
