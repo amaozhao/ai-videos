@@ -1,8 +1,15 @@
 from typing import Optional
+
 import typer
 from typing_extensions import Annotated
-from tools import SubtitleProcessor, Transcribe, Translator, TTSconvert
 
+from tools import (
+    SubtitleProcessor,
+    Transcriber,
+    Translator,
+    TTSConverter,
+    VideoSeparator,
+)
 
 app = typer.Typer()
 
@@ -17,7 +24,7 @@ def reset_path(
     ] = "/home/amaozhao/Downloads/tt",
 ):
     processor = SubtitleProcessor()
-    processor.process_srt_files(input_dir, output_dir)
+    processor.run(input_dir, output_dir)
 
 
 @app.command("translate-subtitle")
@@ -31,7 +38,7 @@ def translate_path(
     service: str = "google",
 ):
     translator = Translator(input_dir, output_dir, service=service)
-    translator.translate_subtitles()
+    translator.run()
 
 
 @app.command("reset-and-translate")
@@ -48,9 +55,9 @@ def chain_translate(
     service: Annotated[str, typer.Argument()] = "google",
 ):
     processor = SubtitleProcessor()
-    processor.process_srt_files(input_dir, temp_dir)
+    processor.run(input_dir, temp_dir)
     translator = Translator(temp_dir, output_dir, service=service)
-    translator.translate_subtitles()
+    translator.run()
 
 
 @app.command("tts")
@@ -60,8 +67,8 @@ def tts_path(
         Optional[str], typer.Argument(help="The directory for output path")
     ] = "/home/amaozhao/Downloads/tts",
 ):
-    tts = TTSconvert(input_dir, output_dir)
-    tts.convert_path()
+    tts = TTSConverter(input_dir, output_dir)
+    tts.run()
 
 
 @app.command("transcribe")
@@ -73,8 +80,21 @@ def transcribe_path(
         Optional[str], typer.Argument(help="The transcribe model type")
     ] = "medium",
 ):
-    transcribe = Transcribe(audio=input_path, model=model)
-    transcribe.run()
+    transcriber = Transcriber(audio=input_path, model=model)
+    transcriber.run()
+
+
+@app.command("separate")
+def separate_path(
+    input_path: Annotated[
+        str, typer.Argument(help="The directory for separate input path")
+    ],
+    output_path: Annotated[
+        Optional[str], typer.Argument(help="The directory for output path")
+    ] = "/home/amaozhao/Downloads/separate",
+):
+    separator = VideoSeparator(input_path=input_path, output_path=output_path)
+    separator.run()
 
 
 if __name__ == "__main__":

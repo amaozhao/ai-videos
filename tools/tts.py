@@ -7,7 +7,7 @@ import srt
 from pydub import AudioSegment
 
 
-class TTSconvert:
+class TTSConverter:
     def __init__(self, input_dir, output_dir):
         self.input_dir = Path(input_dir)
         self.output_dir = Path(output_dir)
@@ -15,7 +15,7 @@ class TTSconvert:
         # self.voice = "zh-CN-YunxiNeural"
         self.voice = "zh-CN-YunyangNeural"
 
-    def convert_path(self):
+    def run(self):
         # 确保输出目录存在
         os.makedirs(self.temp_dir, exist_ok=True)
         for dirpath, dirnames, filenames in os.walk(self.input_dir):
@@ -27,9 +27,9 @@ class TTSconvert:
                 if filename.endswith(".srt"):
                     self.convert_srt(dirpath, output_path, filename)
 
-        # # 清理临时文件
-        # for temp_file in self.temp_dir.glob("*.mp3"):
-        #     temp_file.unlink()
+        # 清理临时文件
+        for temp_file in self.temp_dir.glob("*.mp3"):
+            temp_file.unlink()
 
     def convert_srt(self, dirpath, output_path, filename):
         input_file = os.path.join(dirpath, filename)
@@ -109,5 +109,5 @@ if __name__ == "__main__":
     input_dir = "/home/amaozhao/workspace/ai-videos/sub-output"
     output_dir = "/home/amaozhao/workspace/ai-videos/mp3-output"
 
-    tts = TTSconvert(input_dir, output_dir)
+    tts = TTSConverter(input_dir, output_dir)
     tts.convert_path()

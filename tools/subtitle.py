@@ -83,7 +83,7 @@ class SubtitleProcessor:
             result_sub.append(new_sub)
         return result_sub
 
-    def process_srt_files(self, input_dir, output_dir):
+    def run(self, input_dir, output_dir):
         # 创建输出根目录(如果不存在)
         os.makedirs(output_dir, exist_ok=True)
 
@@ -109,4 +109,4 @@ if __name__ == "__main__":
     processor = SubtitleProcessor()
     input_dir = "/home/amaozhao/Downloads/videos"
     output_dir = "/Users/amaozhao/workspace/ai-videos/output/"
-    processor.process_srt_files(input_dir, output_dir)
+    processor.run(input_dir, output_dir)

@@ -1,6 +1,13 @@
+from .separator import VideoSeparator
 from .subtitle import SubtitleProcessor
-from .transcribe import Transcribe
+from .transcriber import Transcriber
 from .translator import Translator
-from .tts import TTSconvert
+from .tts import TTSConverter
 
-__all__ = ["SubtitleProcessor", "Transcribe", "Translator", "TTSconvert"]
+__all__ = [
+    "SubtitleProcessor",
+    "Transcriber",
+    "Translator",
+    "TTSConverter",
+    "VideoSeparator",
+]

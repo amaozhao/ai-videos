@@ -1,9 +1,9 @@
 import os
 import time
 
+import srt
 from deep_translator import DeeplTranslator, GoogleTranslator
 from dotenv import dotenv_values
-import srt
 from openai import OpenAI
 
 
@@ -23,7 +23,7 @@ class Translator:
         self.chunk_size = 8
         self.delimiter = "||"
 
-    def translate_subtitles(self):
+    def run(self):
         for dirpath, dirnames, filenames in os.walk(self.input_dir):
             rel_path = os.path.relpath(dirpath, self.input_dir)
             output_path = os.path.join(self.output_dir, rel_path)
@@ -133,4 +133,4 @@ if __name__ == "__main__":
     output_dir = "/home/amaozhao/workspace/ai-videos/sub-output"
 
     translator = Translator(input_dir, output_dir, service="google")
-    translator.translate_subtitles()
+    translator.run()
