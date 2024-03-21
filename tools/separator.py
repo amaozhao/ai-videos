@@ -46,6 +46,65 @@ class VideoSeparator:
             segment=self.segment,
         )
 
+    def separate(self, track):
+        origin, res = self.separator.separate_audio_file(track)
+
+        if self.mp3:
+            ext = "mp3"
+        elif self.flac:
+            ext = "flac"
+        else:
+            ext = "wav"
+        kwargs = {
+            "samplerate": self.separator.samplerate,
+            "bitrate": self.mp3_bitrate,
+            "preset": self.mp3_preset,
+            "clip": self.clip_mode,
+            "as_float": self.float32,
+            "bits_per_sample": 24 if self.int24 else 16,
+        }
+        if self.stem is None:
+            for name, source in res.items():
+                stem = out / self.filename.format(
+                    track=track.name.rsplit(".", 1)[0],
+                    trackext=track.name.rsplit(".", 1)[-1],
+                    stem=name,
+                    ext=ext,
+                )
+                stem.parent.mkdir(parents=True, exist_ok=True)
+                save_audio(source, str(stem), **kwargs)
+        else:
+            stem = out / self.filename.format(
+                track=track.name.rsplit(".", 1)[0],
+                trackext=track.name.rsplit(".", 1)[-1],
+                stem="minus_" + self.stem,
+                ext=ext,
+            )
+            if self.other_method == "minus":
+                stem.parent.mkdir(parents=True, exist_ok=True)
+                save_audio(origin - res[self.stem], str(stem), **kwargs)
+            stem = out / self.filename.format(
+                track=track.name.rsplit(".", 1)[0],
+                trackext=track.name.rsplit(".", 1)[-1],
+                stem=self.stem,
+                ext=ext,
+            )
+            stem.parent.mkdir(parents=True, exist_ok=True)
+            save_audio(res.pop(self.stem), str(stem), **kwargs)
+            # Warning : after poping the stem, selected stem is no longer in the dict 'res'
+            if self.other_method == "add":
+                other_stem = th.zeros_like(next(iter(res.values())))
+                for i in res.values():
+                    other_stem += i
+                stem = out / self.filename.format(
+                    track=track.name.rsplit(".", 1)[0],
+                    trackext=track.name.rsplit(".", 1)[-1],
+                    stem="no_" + self.stem,
+                    ext=ext,
+                )
+                stem.parent.mkdir(parents=True, exist_ok=True)
+                save_audio(other_stem, str(stem), **kwargs)
+
     def run(self):
         max_allowed_segment = float("inf")
         if isinstance(self.separator.model, HTDemucs):
@@ -75,7 +134,6 @@ class VideoSeparator:
             return
         out = os.path.join(self.output_path, self.name)
         os.makedirs(out, exist_ok=True)
-        # out.mkdir(parents=True, exist_ok=True)
         print(f"Separated input_path will be stored in {out}")
         for track in self.input_path:
             if not track.exists():
@@ -87,60 +145,4 @@ class VideoSeparator:
                 continue
             print(f"Separating track {track}")
 
-            origin, res = self.separator.separate_audio_file(track)
-
-            if self.mp3:
-                ext = "mp3"
-            elif self.flac:
-                ext = "flac"
-            else:
-                ext = "wav"
-            kwargs = {
-                "samplerate": self.separator.samplerate,
-                "bitrate": self.mp3_bitrate,
-                "preset": self.mp3_preset,
-                "clip": self.clip_mode,
-                "as_float": self.float32,
-                "bits_per_sample": 24 if self.int24 else 16,
-            }
-            if self.stem is None:
-                for name, source in res.items():
-                    stem = out / self.filename.format(
-                        track=track.name.rsplit(".", 1)[0],
-                        trackext=track.name.rsplit(".", 1)[-1],
-                        stem=name,
-                        ext=ext,
-                    )
-                    stem.parent.mkdir(parents=True, exist_ok=True)
-                    save_audio(source, str(stem), **kwargs)
-            else:
-                stem = out / self.filename.format(
-                    track=track.name.rsplit(".", 1)[0],
-                    trackext=track.name.rsplit(".", 1)[-1],
-                    stem="minus_" + self.stem,
-                    ext=ext,
-                )
-                if self.other_method == "minus":
-                    stem.parent.mkdir(parents=True, exist_ok=True)
-                    save_audio(origin - res[self.stem], str(stem), **kwargs)
-                stem = out / self.filename.format(
-                    track=track.name.rsplit(".", 1)[0],
-                    trackext=track.name.rsplit(".", 1)[-1],
-                    stem=self.stem,
-                    ext=ext,
-                )
-                stem.parent.mkdir(parents=True, exist_ok=True)
-                save_audio(res.pop(self.stem), str(stem), **kwargs)
-                # Warning : after poping the stem, selected stem is no longer in the dict 'res'
-                if self.other_method == "add":
-                    other_stem = th.zeros_like(next(iter(res.values())))
-                    for i in res.values():
-                        other_stem += i
-                    stem = out / self.filename.format(
-                        track=track.name.rsplit(".", 1)[0],
-                        trackext=track.name.rsplit(".", 1)[-1],
-                        stem="no_" + self.stem,
-                        ext=ext,
-                    )
-                    stem.parent.mkdir(parents=True, exist_ok=True)
-                    save_audio(other_stem, str(stem), **kwargs)
+            self.separate(track=track)
