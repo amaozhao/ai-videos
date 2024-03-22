@@ -19,13 +19,13 @@ class VideoSeparator:
         self.overlap = 0.25
         self.jobs = 0
         self.segment = None
-        self.stem = None
+        self.stem = "vocals"
         self.other_method = "add"
         self.int24 = True
         self.float32 = None
         self.clip_mode = "rescale"
         self.flac = None
-        self.mp3 = None
+        self.mp3 = True
         self.mp3_bitrate = 320
         self.mp3_preset = 2
         self.jobs = 0
@@ -81,7 +81,6 @@ class VideoSeparator:
             )
             stem = os.path.join(output_path, _f_name)
             if self.other_method == "minus":
-                # stem.parent.mkdir(parents=True, exist_ok=True)
                 save_audio(origin - res[self.stem], str(stem), **kwargs)
             _f_name = self.filename.format(
                 track=track_name.rsplit(".", 1)[0],
@@ -90,7 +89,6 @@ class VideoSeparator:
                 ext=ext,
             )
             stem = os.path.join(output_path, _f_name)
-            # stem.parent.mkdir(parents=True, exist_ok=True)
             save_audio(res.pop(self.stem), str(stem), **kwargs)
             # Warning : after poping the stem, selected stem is no longer in the dict 'res'
             if self.other_method == "add":
@@ -104,7 +102,6 @@ class VideoSeparator:
                     ext=ext,
                 )
                 stem = os.path.join(output_path, _f_name)
-                # stem.parent.mkdir(parents=True, exist_ok=True)
                 save_audio(other_stem, str(stem), **kwargs)
 
     def check(self):
@@ -143,9 +140,7 @@ class VideoSeparator:
                 if file.endswith(".mp4"):
                     # 构建输出文件路径,保持与输入目录结构一致
                     relative_path = os.path.relpath(root, input_path)
-                    print(1111, relative_path)
                     output_path = os.path.join(output_path, relative_path)
-                    print(2222, root, output_path)
                     os.makedirs(output_path, exist_ok=True)
                     input_file = os.path.join(root, file)
                     print(f"Separating track {file}")
