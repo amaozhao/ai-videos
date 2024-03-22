@@ -138,7 +138,7 @@ class VideoSeparator:
     def run(self, input_path, output_path):
         self.check()
         print(f"Separated input_path will be stored in {output_path}")
-        for root, dirs, files in os.walk(input_path):
+        for root, _, files in os.walk(input_path):
             for file in files:
                 if file.endswith(".mp4"):
                     # 构建输出文件路径,保持与输入目录结构一致

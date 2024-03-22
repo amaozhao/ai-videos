@@ -87,7 +87,7 @@ class SubtitleProcessor:
         # 创建输出根目录(如果不存在)
         os.makedirs(output_dir, exist_ok=True)
 
-        for root, dirs, files in os.walk(input_dir):
+        for root, _, files in os.walk(input_dir):
             for file in files:
                 if file.endswith(".srt"):
                     input_path = os.path.join(root, file)

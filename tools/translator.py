@@ -24,7 +24,7 @@ class Translator:
         self.delimiter = "||"
 
     def run(self):
-        for root, dirnames, filenames in os.walk(self.input_dir):
+        for root, _, filenames in os.walk(self.input_dir):
             rel_path = os.path.relpath(root, self.input_dir)
             output_path = os.path.join(self.output_dir, rel_path)
             os.makedirs(output_path, exist_ok=True)

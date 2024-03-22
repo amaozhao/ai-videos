@@ -255,7 +255,7 @@ class Transcriber:
             writer(result, audio_path, writer_args)
 
     def run(self):
-        for root, dirs, files in os.walk(self.audio):
+        for root, _, files in os.walk(self.audio):
             for audio in files:
                 if audio.endswith(".mp4"):
                     results = self.align(self.transcription(os.path.join(root, audio)))
