@@ -1,5 +1,4 @@
 import os
-import sys
 
 import torch as th
 from demucs.api import Separator, save_audio
@@ -10,11 +9,10 @@ from demucs.htdemucs import HTDemucs
 
 
 class VideoSeparator:
-    def __init__(self, input_path, output_path) -> None:
-        self.input_path = input_path
-        self.output_path = output_path
+    def __init__(self) -> None:
         self.name = "htdemucs"
         self.repo = None
+        self.filename = "{track}_{stem}.{ext}"
         self.device = "cpu"
         self.shifts = 1
         self.split = True
@@ -46,7 +44,7 @@ class VideoSeparator:
             segment=self.segment,
         )
 
-    def separate(self, track):
+    def separate(self, track, output_path):
         origin, res = self.separator.separate_audio_file(track)
 
         if self.mp3:
@@ -63,49 +61,53 @@ class VideoSeparator:
             "as_float": self.float32,
             "bits_per_sample": 24 if self.int24 else 16,
         }
+        _, track_name = os.path.split(track)
         if self.stem is None:
             for name, source in res.items():
-                stem = out / self.filename.format(
-                    track=track.name.rsplit(".", 1)[0],
-                    trackext=track.name.rsplit(".", 1)[-1],
-                    stem=name,
+                _f_name = self.filename.format(
+                    track=track_name.rsplit(".", 1)[0],
+                    trackext=track_name.rsplit(".", 1)[-1],
+                    stem=os.path.split(name)[-1],
                     ext=ext,
                 )
-                stem.parent.mkdir(parents=True, exist_ok=True)
+                stem = os.path.join(output_path, _f_name)
                 save_audio(source, str(stem), **kwargs)
         else:
-            stem = out / self.filename.format(
-                track=track.name.rsplit(".", 1)[0],
-                trackext=track.name.rsplit(".", 1)[-1],
+            _f_name = self.filename.format(
+                track=track_name.rsplit(".", 1)[0],
+                trackext=track_name.rsplit(".", 1)[-1],
                 stem="minus_" + self.stem,
                 ext=ext,
             )
+            stem = os.path.join(output_path, _f_name)
             if self.other_method == "minus":
-                stem.parent.mkdir(parents=True, exist_ok=True)
+                # stem.parent.mkdir(parents=True, exist_ok=True)
                 save_audio(origin - res[self.stem], str(stem), **kwargs)
-            stem = out / self.filename.format(
-                track=track.name.rsplit(".", 1)[0],
-                trackext=track.name.rsplit(".", 1)[-1],
+            _f_name = self.filename.format(
+                track=track_name.rsplit(".", 1)[0],
+                trackext=track_name.rsplit(".", 1)[-1],
                 stem=self.stem,
                 ext=ext,
             )
-            stem.parent.mkdir(parents=True, exist_ok=True)
+            stem = os.path.join(output_path, _f_name)
+            # stem.parent.mkdir(parents=True, exist_ok=True)
             save_audio(res.pop(self.stem), str(stem), **kwargs)
             # Warning : after poping the stem, selected stem is no longer in the dict 'res'
             if self.other_method == "add":
                 other_stem = th.zeros_like(next(iter(res.values())))
                 for i in res.values():
                     other_stem += i
-                stem = out / self.filename.format(
-                    track=track.name.rsplit(".", 1)[0],
-                    trackext=track.name.rsplit(".", 1)[-1],
+                _f_name = self.filename.format(
+                    track=track_name.rsplit(".", 1)[0],
+                    trackext=track_name.rsplit(".", 1)[-1],
                     stem="no_" + self.stem,
                     ext=ext,
                 )
-                stem.parent.mkdir(parents=True, exist_ok=True)
+                stem = os.path.join(output_path, _f_name)
+                # stem.parent.mkdir(parents=True, exist_ok=True)
                 save_audio(other_stem, str(stem), **kwargs)
 
-    def run(self):
+    def check(self):
         max_allowed_segment = float("inf")
         if isinstance(self.separator.model, HTDemucs):
             max_allowed_segment = float(self.separator.model.segment)
@@ -116,7 +118,7 @@ class VideoSeparator:
                 "Cannot use a Transformer model with a longer segment "
                 f"than it was trained for. Maximum segment is: {max_allowed_segment}"
             )
-            return
+            raise
 
         if isinstance(self.separator.model, BagOfModels):
             print(
@@ -131,18 +133,20 @@ class VideoSeparator:
                     stem=self.stem, sources=", ".join(self.separator.model.sources)
                 )
             )
-            return
-        out = os.path.join(self.output_path, self.name)
-        os.makedirs(out, exist_ok=True)
-        print(f"Separated input_path will be stored in {out}")
-        for track in self.input_path:
-            if not track.exists():
-                print(
-                    f"File {track} does not exist. If the path contains spaces, "
-                    'please try again after surrounding the entire path with quotes "".',
-                    file=sys.stderr,
-                )
-                continue
-            print(f"Separating track {track}")
+            raise
 
-            self.separate(track=track)
+    def run(self, input_path, output_path):
+        self.check()
+        print(f"Separated input_path will be stored in {output_path}")
+        for root, dirs, files in os.walk(input_path):
+            for file in files:
+                if file.endswith(".mp4"):
+                    # 构建输出文件路径,保持与输入目录结构一致
+                    relative_path = os.path.relpath(root, input_path)
+                    print(1111, relative_path)
+                    output_path = os.path.join(output_path, relative_path)
+                    print(2222, root, output_path)
+                    os.makedirs(output_path, exist_ok=True)
+                    input_file = os.path.join(root, file)
+                    print(f"Separating track {file}")
+                    self.separate(track=input_file, output_path=output_path)

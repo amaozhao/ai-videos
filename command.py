@@ -5,10 +5,9 @@ from typing_extensions import Annotated
 
 from tools import (
     SubtitleProcessor,
-    Transcriber,
-    Translator,
+    Transcriber, Translator,
     TTSConverter,
-    VideoSeparator,
+    VideoSeparator
 )
 
 app = typer.Typer()
@@ -93,8 +92,8 @@ def separate_path(
         Optional[str], typer.Argument(help="The directory for output path")
     ] = "/home/amaozhao/Downloads/separate",
 ):
-    separator = VideoSeparator(input_path=input_path, output_path=output_path)
-    separator.run()
+    separator = VideoSeparator()
+    separator.run(input_path=input_path, output_path=output_path)
 
 
 if __name__ == "__main__":
