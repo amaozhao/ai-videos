@@ -30,6 +30,14 @@ class VideoSeparator:
         self.mp3_preset = 2
         self.jobs = 0
         self.separator = self.get_separator()
+        self.kwargs = {
+            "samplerate": self.separator.samplerate,
+            "bitrate": self.mp3_bitrate,
+            "preset": self.mp3_preset,
+            "clip": self.clip_mode,
+            "as_float": self.float32,
+            "bits_per_sample": 24 if self.int24 else 16,
+        }
 
     def get_separator(self):
         return Separator(
@@ -44,23 +52,18 @@ class VideoSeparator:
             segment=self.segment,
         )
 
-    def separate(self, track, output_path):
-        origin, res = self.separator.separate_audio_file(track)
-
+    def get_ext(self):
         if self.mp3:
             ext = "mp3"
         elif self.flac:
             ext = "flac"
         else:
             ext = "wav"
-        kwargs = {
-            "samplerate": self.separator.samplerate,
-            "bitrate": self.mp3_bitrate,
-            "preset": self.mp3_preset,
-            "clip": self.clip_mode,
-            "as_float": self.float32,
-            "bits_per_sample": 24 if self.int24 else 16,
-        }
+        return ext
+
+    def separate(self, track, output_path):
+        origin, res = self.separator.separate_audio_file(track)
+        ext = self.get_ext()
         _, track_name = os.path.split(track)
         if self.stem is None:
             for name, source in res.items():
@@ -71,7 +74,7 @@ class VideoSeparator:
                     ext=ext,
                 )
                 stem = os.path.join(output_path, _f_name)
-                save_audio(source, str(stem), **kwargs)
+                save_audio(source, str(stem), **self.kwargs)
         else:
             _f_name = self.filename.format(
                 track=track_name.rsplit(".", 1)[0],
@@ -81,7 +84,7 @@ class VideoSeparator:
             )
             stem = os.path.join(output_path, _f_name)
             if self.other_method == "minus":
-                save_audio(origin - res[self.stem], str(stem), **kwargs)
+                save_audio(origin - res[self.stem], str(stem), **self.kwargs)
             _f_name = self.filename.format(
                 track=track_name.rsplit(".", 1)[0],
                 trackext=track_name.rsplit(".", 1)[-1],
@@ -89,7 +92,7 @@ class VideoSeparator:
                 ext=ext,
             )
             stem = os.path.join(output_path, _f_name)
-            save_audio(res.pop(self.stem), str(stem), **kwargs)
+            save_audio(res.pop(self.stem), str(stem), **self.kwargs)
             # Warning : after poping the stem, selected stem is no longer in the dict 'res'
             if self.other_method == "add":
                 other_stem = th.zeros_like(next(iter(res.values())))
@@ -102,7 +105,7 @@ class VideoSeparator:
                     ext=ext,
                 )
                 stem = os.path.join(output_path, _f_name)
-                save_audio(other_stem, str(stem), **kwargs)
+                save_audio(other_stem, str(stem), **self.kwargs)
 
     def check(self):
         max_allowed_segment = float("inf")

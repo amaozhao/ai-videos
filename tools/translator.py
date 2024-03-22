@@ -24,14 +24,14 @@ class Translator:
         self.delimiter = "||"
 
     def run(self):
-        for dirpath, dirnames, filenames in os.walk(self.input_dir):
-            rel_path = os.path.relpath(dirpath, self.input_dir)
+        for root, dirnames, filenames in os.walk(self.input_dir):
+            rel_path = os.path.relpath(root, self.input_dir)
             output_path = os.path.join(self.output_dir, rel_path)
             os.makedirs(output_path, exist_ok=True)
 
             for filename in filenames:
                 if filename.endswith(".srt"):
-                    self.translate_file(dirpath, output_path, filename)
+                    self.translate_file(root, output_path, filename)
                     time.sleep(1)
 
     def replace(self, content):
@@ -40,7 +40,7 @@ class Translator:
 
     def chunk_subs(self, subs):
         chunked_subs = [
-            subs[i : i + self.chunk_size] for i in range(0, len(subs), self.chunk_size)
+            subs[i: i + self.chunk_size] for i in range(0, len(subs), self.chunk_size)
         ]
         return chunked_subs
 
