@@ -2,6 +2,7 @@ black
 deep-translator
 demucs
 edge-tts
+hanzidentifier
 isort
 openai
 pydub
