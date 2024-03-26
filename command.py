@@ -36,8 +36,8 @@ def translate_path(
     ] = "/home/amaozhao/Downloads/translation",
     service: str = "google",
 ):
-    translator = Translator(input_dir, output_dir, service=service)
-    translator.run()
+    translator = Translator(service=service)
+    translator.run(input_dir, output_dir)
 
 
 @app.command("reset-and-translate")
@@ -55,8 +55,8 @@ def chain_translate(
 ):
     processor = SubtitleProcessor()
     processor.run(input_dir, temp_dir)
-    translator = Translator(temp_dir, output_dir, service=service)
-    translator.run()
+    translator = Translator(service=service)
+    translator.run(temp_dir, output_dir)
 
 
 @app.command("tts")
@@ -66,8 +66,8 @@ def tts_path(
         Optional[str], typer.Argument(help="The directory for output path")
     ] = "/home/amaozhao/Downloads/tts",
 ):
-    tts = TTSConverter(input_dir, output_dir)
-    tts.run()
+    tts = TTSConverter()
+    tts.run(input_dir, output_dir)
 
 
 @app.command("transcribe")
@@ -79,8 +79,8 @@ def transcribe_path(
         Optional[str], typer.Argument(help="The transcribe model type")
     ] = "medium",
 ):
-    transcriber = Transcriber(audio=input_path, model=model)
-    transcriber.run()
+    transcriber = Transcriber(model=model)
+    transcriber.run(input_path)
 
 
 @app.command("separate")

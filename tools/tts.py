@@ -8,14 +8,14 @@ from pydub import AudioSegment
 
 
 class TTSConverter:
-    def __init__(self, input_dir, output_dir):
-        self.input_dir = Path(input_dir)
-        self.output_dir = Path(output_dir)
+    def __init__(self):
         self.temp_dir = Path("./tmp")
         # self.voice = "zh-CN-YunxiNeural"
         self.voice = "zh-CN-YunyangNeural"
 
-    def run(self):
+    def run(self, input_dir, output_dir):
+        self.input_dir = Path(input_dir)
+        self.output_dir = Path(output_dir)
         # 确保输出目录存在
         os.makedirs(self.temp_dir, exist_ok=True)
         for dirpath, dirnames, filenames in os.walk(self.input_dir):

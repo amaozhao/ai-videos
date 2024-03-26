@@ -14,7 +14,6 @@ class Transcriber:
 
     def __init__(
         self,
-        audio,
         model="medium",
         model_dir=None,
         batch_size=8,
@@ -58,7 +57,6 @@ class Transcriber:
         hf_token=None,
         print_progress=False,
     ):
-        self.audio = audio
         self.model = model
         self.model_dir = model_dir
         self.device = "cpu"
@@ -254,8 +252,8 @@ class Transcriber:
             result["language"] = self.align_language
             writer(result, audio_path, writer_args)
 
-    def run(self):
-        for root, _, files in os.walk(self.audio):
+    def run(self, input_dir):
+        for root, _, files in os.walk(input_dir):
             for audio in files:
                 if audio.endswith(".mp4"):
                     results = self.align(self.transcription(os.path.join(root, audio)))

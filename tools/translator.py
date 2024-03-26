@@ -8,10 +8,8 @@ from openai import OpenAI
 
 
 class Translator:
-    def __init__(self, input_dir, output_dir, service=None):
+    def __init__(self, service=None):
         config = dotenv_values(".env")
-        self.input_dir = input_dir
-        self.output_dir = output_dir
         self.client = OpenAI(
             api_key=config.get("API_KEY"),
             base_url=config.get("BASE_URL"),
@@ -23,10 +21,10 @@ class Translator:
         self.chunk_size = 8
         self.delimiter = "||"
 
-    def run(self):
-        for root, _, filenames in os.walk(self.input_dir):
-            rel_path = os.path.relpath(root, self.input_dir)
-            output_path = os.path.join(self.output_dir, rel_path)
+    def run(self, input_dir, output_dir):
+        for root, _, filenames in os.walk(input_dir):
+            rel_path = os.path.relpath(root, input_dir)
+            output_path = os.path.join(output_dir, rel_path)
             os.makedirs(output_path, exist_ok=True)
 
             for filename in filenames:
