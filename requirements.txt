@@ -1,6 +1,6 @@
 black
 deep-translator
-demucs
+demucs @ git+https://github.com/amaozhao/demucs
 edge-tts
 fastapi
 g4f
@@ -11,4 +11,4 @@ pydub
 python-dotenv
 srt
 typer
-whisperx
+whisperx @ git+https://github.com/m-bain/whisperx.git
