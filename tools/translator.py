@@ -4,8 +4,8 @@ import time
 import srt
 from deep_translator import DeeplTranslator, GoogleTranslator
 from dotenv import dotenv_values
-from openai import OpenAI
 from g4f.client import Client
+from openai import OpenAI
 
 
 class Translator:
@@ -20,7 +20,7 @@ class Translator:
         self.g4f_client = Client()
         self.dl_key = config.get("DEEPL_KEY")
         self.service = service or "chatGPT"
-        self.chunk_size = 8
+        self.chunk_size = 10
         self.delimiter = "||"
 
     def run(self, input_dir, output_dir):
@@ -28,7 +28,6 @@ class Translator:
             rel_path = os.path.relpath(root, input_dir)
             output_path = os.path.join(output_dir, rel_path)
             os.makedirs(output_path, exist_ok=True)
-
             for filename in filenames:
                 if filename.endswith(".srt"):
                     self.translate_file(root, output_path, filename)
@@ -40,7 +39,7 @@ class Translator:
 
     def chunk_subs(self, subs):
         chunked_subs = [
-            subs[i: i + self.chunk_size] for i in range(0, len(subs), self.chunk_size)
+            subs[i : i + self.chunk_size] for i in range(0, len(subs), self.chunk_size)
         ]
         return chunked_subs
 
@@ -88,7 +87,7 @@ class Translator:
     def translate_text(self, text):
         if self.service == "chatGPT":
             return self.chatgpt_translate(text)
-        if self.service == 'g4f':
+        if self.service == "g4f":
             return self.g4f_translate(text)
         if self.service == "deepl":
             return DeeplTranslator(
@@ -99,7 +98,7 @@ class Translator:
                 source="en",
                 target="zh-CN",
             ).translate(text)
-        
+
     def get_prompt(self, text):
         _prompt = """
         你是一位专业的翻译专家,精通英语和中文。现在需要你将指定目录下的所有英文字幕文件翻译成中文字幕文件,注意以下要求:
@@ -127,7 +126,7 @@ class Translator:
             )
             content = response.choices[0].message.content
             translation = content.strip() if content else text.strip()
-            time.sleep(20)
+            time.sleep(25)
         except Exception as e:
             print(f"翻译出错: {e}")
             translation = text
@@ -144,6 +143,7 @@ class Translator:
             )
             content = response.choices[0].message.content
             translation = content.strip() if content else text.strip()
+            time.sleep(2)
         except Exception as e:
             print(f"翻译出错: {e}")
             translation = text

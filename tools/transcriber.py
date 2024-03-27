@@ -1,13 +1,115 @@
 import gc
 import os
+import re
 import warnings
+from typing import TextIO
 
 import numpy as np
 import torch
 from whisperx.alignment import align, load_align_model
 from whisperx.asr import load_model
 from whisperx.audio import load_audio
-from whisperx.utils import LANGUAGES, TO_LANGUAGE_CODE, get_writer
+from whisperx.utils import (
+    LANGUAGES,
+    LANGUAGES_WITHOUT_SPACES,
+    TO_LANGUAGE_CODE,
+    SubtitlesWriter,
+)
+
+
+class WriteSRT(SubtitlesWriter):
+    extension: str = "srt"
+    always_include_hours: bool = True
+    decimal_marker: str = ","
+
+    def iterate_result(self, result: dict, options: dict):
+        # raw_max_line_width: Optional[int] = options["max_line_width"]
+        # max_line_count: Optional[int] = options["max_line_count"]
+        highlight_words: bool = options["highlight_words"]
+        # max_line_width = 1000 if raw_max_line_width is None else raw_max_line_width
+        # preserve_segments = max_line_count is None or raw_max_line_width is None
+        punctuations = set(".,!?")  # 标点符号集合
+
+        if len(result["segments"]) == 0:
+            return
+
+        def iterate_subtitles():
+            subtitle: list[dict] = []
+            times = []
+
+            for segment in result["segments"]:
+                for i, original_timing in enumerate(segment["words"]):
+                    timing = original_timing.copy()
+
+                    subtitle.append(timing)
+                    times.append(
+                        (segment["start"], segment["end"], segment.get("speaker"))
+                    )
+
+                    # 如果当前单词是标点符号,则断句
+                    if timing["word"][-1] in punctuations:
+                        yield subtitle, times
+                        subtitle = []
+                        times = []
+
+                # 处理最后一句话
+                if len(subtitle) > 0:
+                    yield subtitle, times
+                    subtitle = []
+                    times = []
+
+        if "words" in result["segments"][0]:
+            for subtitle, times in iterate_subtitles():
+                sstart, ssend, speaker = times[0]
+                subtitle_start = self.format_timestamp(sstart)
+                subtitle_end = self.format_timestamp(ssend)
+                if result["language"] in LANGUAGES_WITHOUT_SPACES:
+                    subtitle_text = "".join([word["word"] for word in subtitle])
+                else:
+                    subtitle_text = " ".join([word["word"] for word in subtitle])
+                has_timing = any(["start" in word for word in subtitle])
+
+                prefix = ""
+                if speaker is not None:
+                    prefix = f"[{speaker}]: "
+
+                if highlight_words and has_timing:
+                    last = subtitle_start
+                    all_words = [timing["word"] for timing in subtitle]
+                    for i, this_word in enumerate(subtitle):
+                        if "start" in this_word:
+                            start = self.format_timestamp(this_word["start"])
+                            end = self.format_timestamp(this_word["end"])
+                            if last != start:
+                                yield last, start, prefix + subtitle_text
+
+                            yield start, end, prefix + " ".join(
+                                [
+                                    (
+                                        re.sub(r"^(\s*)(.*)$", r"\1<u>\2</u>", word)
+                                        if j == i
+                                        else word
+                                    )
+                                    for j, word in enumerate(all_words)
+                                ]
+                            )
+                            last = end
+                else:
+                    yield subtitle_start, subtitle_end, prefix + subtitle_text
+        else:
+            for segment in result["segments"]:
+                segment_start = self.format_timestamp(segment["start"])
+                segment_end = self.format_timestamp(segment["end"])
+                segment_text = segment["text"].strip().replace("-->", "->")
+                if "speaker" in segment:
+                    segment_text = f"[{segment['speaker']}]: {segment_text}"
+                yield segment_start, segment_end, segment_text
+
+    def write_result(self, result: dict, file: TextIO, options: dict):
+        for i, (start, end, text) in enumerate(
+            self.iterate_result(result, options), start=1
+        ):
+            print(f"{i}\n{start} --> {end}\n{text}\n", file=file, flush=True)
 
 
 class Transcriber:
@@ -49,8 +151,8 @@ class Transcriber:
         compression_ratio_threshold=2.4,
         logprob_threshold=-1.0,
         no_speech_threshold=0.6,
-        max_line_width=None,
-        max_line_count=None,
+        max_line_width=200,
+        max_line_count=50,
         highlight_words=False,
         segment_resolution="sentence",
         threads=4,
@@ -207,15 +309,7 @@ class Transcriber:
                 if self.align_model is not None and len(result["segments"]) > 0:
                     if result.get("language", "en") != self.align_metadata["language"]:
                         # load new language
-                        _f_string = (
-                            f"New language found ({result['language']})! "
-                            f"Previous was "
-                            f"({self.align_metadata['language']}), "
-                            "loading new alignment model for new language..."
-                        )
-                        print(_f_string)
-                        self.align_model,
-                        self.align_metadata = load_align_model(
+                        self.align_model, self.align_metadata = load_align_model(
                             result["language"], self.device
                         )
                     print(">>Performing alignment...")
@@ -248,7 +342,8 @@ class Transcriber:
 
         # >> Write
         for result, audio_path in results:
-            writer = get_writer(self.output_format, os.path.dirname(audio_path))
+            # writer = get_writer(self.output_format, os.path.dirname(audio_path))
+            writer = WriteSRT(os.path.dirname(audio_path))
             result["language"] = self.align_language
             writer(result, audio_path, writer_args)
 
