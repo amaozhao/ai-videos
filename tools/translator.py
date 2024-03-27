@@ -20,7 +20,7 @@ class Translator:
         self.g4f_client = Client()
         self.dl_key = config.get("DEEPL_KEY")
         self.service = service or "chatGPT"
-        self.chunk_size = 8
+        self.chunk_size = 10
         self.delimiter = "||"
 
     def run(self, input_dir, output_dir):
@@ -28,7 +28,6 @@ class Translator:
             rel_path = os.path.relpath(root, input_dir)
             output_path = os.path.join(output_dir, rel_path)
             os.makedirs(output_path, exist_ok=True)
-
             for filename in filenames:
                 if filename.endswith(".srt"):
                     self.translate_file(root, output_path, filename)
@@ -99,7 +98,7 @@ class Translator:
                 source="en",
                 target="zh-CN",
             ).translate(text)
-        
+
     def get_prompt(self, text):
         _prompt = """
         你是一位专业的翻译专家,精通英语和中文。现在需要你将指定目录下的所有英文字幕文件翻译成中文字幕文件,注意以下要求:
@@ -144,6 +143,7 @@ class Translator:
             )
             content = response.choices[0].message.content
             translation = content.strip() if content else text.strip()
+            time.sleep(2)
         except Exception as e:
             print(f"翻译出错: {e}")
             translation = text
