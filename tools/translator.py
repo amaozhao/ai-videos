@@ -5,6 +5,7 @@ import srt
 from deep_translator import DeeplTranslator, GoogleTranslator
 from dotenv import dotenv_values
 from openai import OpenAI
+from g4f.client import Client
 
 
 class Translator:
@@ -16,6 +17,7 @@ class Translator:
         )
         # self.gpt_model = "moonshot-v1-8k"
         self.gpt_model = config.get("GPT_MODEL", "gpt-3.5-turbo")
+        self.g4f_client = Client()
         self.dl_key = config.get("DEEPL_KEY")
         self.service = service or "chatGPT"
         self.chunk_size = 8
@@ -86,6 +88,8 @@ class Translator:
     def translate_text(self, text):
         if self.service == "chatGPT":
             return self.chatgpt_translate(text)
+        if self.service == 'g4f':
+            return self.g4f_translate(text)
         if self.service == "deepl":
             return DeeplTranslator(
                 api_key=self.dl_key, source="en", target="zh", use_free_api=True
@@ -95,8 +99,8 @@ class Translator:
                 source="en",
                 target="zh-CN",
             ).translate(text)
-
-    def chatgpt_translate(self, text):
+        
+    def get_prompt(self, text):
         _prompt = """
         你是一位专业的翻译专家,精通英语和中文。现在需要你将指定目录下的所有英文字幕文件翻译成中文字幕文件,注意以下要求:
         1. 仅翻译现有内容,不添加新内容。
@@ -110,6 +114,10 @@ class Translator:
         """
         prompt = "\n".join(_prompt.split("\n")).replace(" ", "")
         prompt += text
+        return prompt
+
+    def chatgpt_translate(self, text):
+        prompt = self.get_prompt(text=text)
         try:
             response = self.client.chat.completions.create(
                 messages=[
@@ -120,6 +128,22 @@ class Translator:
             content = response.choices[0].message.content
             translation = content.strip() if content else text.strip()
             time.sleep(20)
+        except Exception as e:
+            print(f"翻译出错: {e}")
+            translation = text
+        return translation
+
+    def g4f_translate(self, text):
+        prompt = self.get_prompt(text=text)
+        try:
+            response = self.g4f_client.chat.completions.create(
+                messages=[
+                    {"role": "user", "content": prompt},
+                ],
+                model="gpt-3.5-turbo-16k-0613",
+            )
+            content = response.choices[0].message.content
+            translation = content.strip() if content else text.strip()
         except Exception as e:
             print(f"翻译出错: {e}")
             translation = text

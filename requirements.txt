@@ -10,5 +10,6 @@ openai
 pydub
 python-dotenv
 srt
+tenacity
 typer
 whisperx @ git+https://github.com/m-bain/whisperx.git

@@ -34,7 +34,7 @@ def translate_path(
     output_dir: Annotated[
         Optional[str], typer.Argument(help="The directory for translate path")
     ] = "/home/amaozhao/Downloads/translation",
-    service: str = "google",
+    service: str = "g4f",
 ):
     translator = Translator(service=service)
     translator.run(input_dir, output_dir)
@@ -51,7 +51,7 @@ def chain_translate(
     output_dir: Annotated[
         Optional[str], typer.Argument(help="The directory for output path")
     ] = "/home/amaozhao/Downloads/translation",
-    service: Annotated[str, typer.Argument()] = "google",
+    service: Annotated[str, typer.Argument()] = "g4f",
 ):
     processor = SubtitleProcessor()
     processor.run(input_dir, temp_dir)
