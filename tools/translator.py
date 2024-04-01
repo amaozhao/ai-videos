@@ -39,7 +39,7 @@ class Translator:
 
     def chunk_subs(self, subs):
         chunked_subs = [
-            subs[i : i + self.chunk_size] for i in range(0, len(subs), self.chunk_size)
+            subs[i: i + self.chunk_size] for i in range(0, len(subs), self.chunk_size)
         ]
         return chunked_subs
 
@@ -126,9 +126,10 @@ class Translator:
             )
             content = response.choices[0].message.content
             translation = content.strip() if content else text.strip()
-            time.sleep(25)
+            time.sleep(1)
         except Exception as e:
             print(f"翻译出错: {e}")
+            time.sleep(1)
             translation = text
         return translation
 
