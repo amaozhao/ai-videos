@@ -10,13 +10,18 @@ from openai import OpenAI
 class Translator:
     def __init__(self, service=None):
         config = dotenv_values(".env")
-        self.client = OpenAI(
-            api_key=config.get("API_KEY"),
-            base_url=config.get("BASE_URL"),
+        self.kimi_client = OpenAI(
+            api_key=config.get("KIMI_API_KEY"),
+            base_url=config.get("KIMI_BASE_URL"),
         )
-        self.gpt_model = "moonshot-v1-8k"
+        self.kimi_model = config.get("KIMI_MODEL", 'moonshot-v1-8k')
+        self.deepseek_client = OpenAI(
+            api_key=config.get("DEEPSEEK_API_KEY"),
+            base_url=config.get("DEEPSEEK_BASE_URL"),
+        )
+        self.deepseek_model = config.get("DEEPSEEK_MODEL", 'deepseek-chat')
         self.dl_key = config.get("DEEPL_KEY")
-        self.service = service or "chatGPT"
+        self.service = service or "kimi"
         self.chunk_size = 10
         self.delimiter = "||"
 
@@ -32,7 +37,7 @@ class Translator:
 
     def replace(self, content):
         if not content:
-            return ''
+            return ""
         content = content.replace("您", "你")
         return content
 
@@ -62,6 +67,8 @@ class Translator:
                 for t in chunks:
                     _translated = self.translate_text(t.content)
                     _translated = self.replace(_translated)
+                    if not _translated:
+                        continue
                     new_sub = srt.Subtitle(
                         index=t.index,
                         start=t.start,
@@ -84,8 +91,10 @@ class Translator:
             f.write(srt.compose(output_subs))
 
     def translate_text(self, text):
-        if self.service == "chatGPT":
-            return self.chatgpt_translate(text)
+        if self.service == "kimi":
+            return self.kimi_translate(text)
+        if self.service == "deepseek":
+            return self.deepseek_translate(text)
         if self.service == "deepl":
             return DeeplTranslator(
                 api_key=self.dl_key, source="en", target="zh", use_free_api=True
@@ -97,25 +106,46 @@ class Translator:
             ).translate(text)
 
     def get_prompt(self, text):
+        # _prompt = """
+        # 你是一位专业的翻译专家,精通英语和中文。现在需要你将指定目录下的所有英文字幕文件翻译成中文字幕文件,注意以下要求:
+        # 1. 仅翻译现有内容,不添加新内容。
+        # 2. 只输出翻译后的中文文本,不输出其他内容。
+        # 3. 遇到专业名词时,保留原文。
+        # 4. 如果源字幕有错误,请予以更正。
+        # 5. 使用简洁语言,避免冗余。
+        # 6. 使用"你"代替"您"。
+        # 7. 直接开始翻译,不要添加任何前言。
+        # 我的原文是:
+        # """
         _prompt = """
-        你是一位专业的翻译专家,精通英语和中文。现在需要你将指定目录下的所有英文字幕文件翻译成中文字幕文件,注意以下要求:
-        1. 仅翻译现有内容,不添加新内容。
-        2. 只输出翻译后的中文文本,不输出其他内容。
-        3. 遇到专业名词时,保留原文。
-        4. 如果源字幕有错误,请予以更正。
-        5. 使用简洁语言,避免冗余。
-        6. 使用"你"代替"您"。
-        7. 直接开始翻译,不要添加任何前言。
-        我的原文是:
+        你是一位精通英语和中文的翻译专家,帮我把英文翻译成中文:
         """
         prompt = "\n".join(_prompt.split("\n")).replace(" ", "")
         prompt += text
         return prompt
 
-    def chatgpt_translate(self, text):
+    def kimi_translate(self, text):
         prompt = self.get_prompt(text=text)
         try:
-            response = self.client.chat.completions.create(
+            response = self.kimi_client.chat.completions.create(
+                messages=[
+                    {"role": "user", "content": prompt},
+                ],
+                model=self.gpt_model,
+            )
+            content = response.choices[0].message.content
+            translation = content.strip() if content else text.strip()
+            time.sleep(1)
+        except Exception as e:
+            print(f"翻译出错: {e}")
+            time.sleep(1)
+            translation = text
+        return translation
+
+    def deepseek_translate(self, text):
+        prompt = self.get_prompt(text=text)
+        try:
+            response = self.deepseek_client.chat.completions.create(
                 messages=[
                     {"role": "user", "content": prompt},
                 ],
