@@ -34,6 +34,8 @@ class Translator:
                     time.sleep(1)
 
     def replace(self, content):
+        if not content:
+            return ''
         content = content.replace("您", "你")
         return content
 
