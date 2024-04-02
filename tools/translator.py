@@ -4,7 +4,6 @@ import time
 import srt
 from deep_translator import DeeplTranslator, GoogleTranslator
 from dotenv import dotenv_values
-from g4f.client import Client
 from openai import OpenAI
 
 
@@ -15,9 +14,7 @@ class Translator:
             api_key=config.get("API_KEY"),
             base_url=config.get("BASE_URL"),
         )
-        # self.gpt_model = "moonshot-v1-8k"
-        self.gpt_model = config.get("GPT_MODEL", "gpt-3.5-turbo")
-        self.g4f_client = Client()
+        self.gpt_model = "moonshot-v1-8k"
         self.dl_key = config.get("DEEPL_KEY")
         self.service = service or "chatGPT"
         self.chunk_size = 10
@@ -89,8 +86,6 @@ class Translator:
     def translate_text(self, text):
         if self.service == "chatGPT":
             return self.chatgpt_translate(text)
-        if self.service == "g4f":
-            return self.g4f_translate(text)
         if self.service == "deepl":
             return DeeplTranslator(
                 api_key=self.dl_key, source="en", target="zh", use_free_api=True
@@ -132,23 +127,6 @@ class Translator:
         except Exception as e:
             print(f"翻译出错: {e}")
             time.sleep(1)
-            translation = text
-        return translation
-
-    def g4f_translate(self, text):
-        prompt = self.get_prompt(text=text)
-        try:
-            response = self.g4f_client.chat.completions.create(
-                messages=[
-                    {"role": "user", "content": prompt},
-                ],
-                model="gpt-3.5-turbo-16k-0613",
-            )
-            content = response.choices[0].message.content
-            translation = content.strip() if content else text.strip()
-            time.sleep(2)
-        except Exception as e:
-            print(f"翻译出错: {e}")
             translation = text
         return translation
 
