@@ -45,13 +45,16 @@ class TTSConverter:
         self.contact_mp3(subs, output_file)
 
     async def convert_sub(self, idx, subtitle):
-        communicate = edge_tts.Communicate(subtitle.content, self.voice)
+        content = subtitle.content
+        if len(content.split('\n')) > 1:
+            content = content.split('\n')[0]
+        communicate = edge_tts.Communicate(content, self.voice)
         output_file = os.path.join(self.temp_dir, f"{idx}.mp3")
         await communicate.save(output_file)
 
     def contact_mp3(self, subs, output_file):
         mp3_files = []
-        for dirpath, dirnames, filenames in os.walk(self.temp_dir):
+        for dirpath, _, filenames in os.walk(self.temp_dir):
             rel_path = os.path.relpath(dirpath, self.input_dir)
             for filename in filenames:
                 if filename.endswith(".mp3"):
