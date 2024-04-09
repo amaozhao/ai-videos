@@ -14,7 +14,7 @@ from whisperx.utils import (
     LANGUAGES_WITHOUT_SPACES,
     TO_LANGUAGE_CODE,
     SubtitlesWriter,
-    get_writer,
+    # get_writer,
 )
 
 
@@ -271,7 +271,9 @@ class Transcriber:
 
     def get_align_model(self):
         align_model, align_metadata = load_align_model(
-            self.align_language, self.device, model_name=self.align_model
+            self.align_language,
+            self.device,
+            model_name=self.align_model
         )
         return align_model, align_metadata
 
@@ -343,8 +345,8 @@ class Transcriber:
 
         # >> Write
         for result, audio_path in results:
-            writer = get_writer(self.output_format, os.path.dirname(audio_path))
-            # writer = WriteSRT(os.path.dirname(audio_path))
+            # writer = get_writer(self.output_format, os.path.dirname(audio_path))
+            writer = WriteSRT(os.path.dirname(audio_path))
             result["language"] = self.align_language
             writer(result, audio_path, writer_args)
 
