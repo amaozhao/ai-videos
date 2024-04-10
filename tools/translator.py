@@ -9,18 +9,8 @@ from openai import OpenAI
 
 class Translator:
     def __init__(self, service=None):
-        config = dotenv_values(".env")
-        self.kimi_client = OpenAI(
-            api_key=config.get("KIMI_API_KEY"),
-            base_url=config.get("KIMI_BASE_URL"),
-        )
-        self.kimi_model = config.get("KIMI_MODEL", 'moonshot-v1-8k')
-        self.deepseek_client = OpenAI(
-            api_key=config.get("DEEPSEEK_API_KEY"),
-            base_url=config.get("DEEPSEEK_BASE_URL"),
-        )
-        self.deepseek_model = config.get("DEEPSEEK_MODEL", 'deepseek-chat')
-        self.dl_key = config.get("DEEPL_KEY")
+        self.config = dotenv_values(".env")
+        self.dl_key = self.config.get("DEEPL_KEY")
         self.service = service or "kimi"
         self.chunk_size = 10
         self.delimiter = "||"
@@ -93,6 +83,8 @@ class Translator:
     def translate_text(self, text):
         if self.service == "kimi":
             return self.kimi_translate(text)
+        if self.service == "local":
+            return self.local_translate(text)
         if self.service == "deepseek":
             return self.deepseek_translate(text)
         if self.service == "deepl":
@@ -125,13 +117,18 @@ class Translator:
         return prompt
 
     def kimi_translate(self, text):
+        kimi_client = OpenAI(
+            api_key=self.config.get("KIMI_API_KEY"),
+            base_url=self.config.get("KIMI_BASE_URL"),
+        )
+        kimi_model = self.config.get("KIMI_MODEL", 'moonshot-v1-8k')
         prompt = self.get_prompt(text=text)
         try:
-            response = self.kimi_client.chat.completions.create(
+            response = kimi_client.chat.completions.create(
                 messages=[
                     {"role": "user", "content": prompt},
                 ],
-                model=self.gpt_model,
+                model=kimi_model,
             )
             content = response.choices[0].message.content
             translation = content.strip() if content else text.strip()
@@ -143,13 +140,18 @@ class Translator:
         return translation
 
     def deepseek_translate(self, text):
+        deepseek_client = OpenAI(
+            api_key=self.config.get("DEEPSEEK_API_KEY"),
+            base_url=self.config.get("DEEPSEEK_BASE_URL"),
+        )
+        deepseek_model = self.config.get("DEEPSEEK_MODEL", 'deepseek-chat')
         prompt = self.get_prompt(text=text)
         try:
-            response = self.deepseek_client.chat.completions.create(
+            response = deepseek_client.chat.completions.create(
                 messages=[
                     {"role": "user", "content": prompt},
                 ],
-                model=self.gpt_model,
+                model=deepseek_model,
             )
             content = response.choices[0].message.content
             translation = content.strip() if content else text.strip()
@@ -157,6 +159,31 @@ class Translator:
         except Exception as e:
             print(f"翻译出错: {e}")
             time.sleep(1)
+            translation = text
+        return translation
+
+    def local_translate(self, text):
+        local_client = OpenAI(
+            api_key='anything',
+            base_url="http://localhost:3040/v1/",
+        )
+        local_model = "gpt-3.5-turbo"
+        # openai.api_key = 'anything'
+        # openai.base_url = "http://localhost:3040/v1/"
+        prompt = self.get_prompt(text=text)
+        try:
+            response = local_client.chat.completions.create(
+                messages=[
+                    {"role": "user", "content": prompt},
+                ],
+                model=local_model,
+            )
+            content = response.choices[0].message.content
+            translation = content.strip() if content else text.strip()
+            time.sleep(0.5)
+        except Exception as e:
+            print(f"翻译出错: {e}")
+            time.sleep(0.5)
             translation = text
         return translation
 

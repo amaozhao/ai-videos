@@ -35,7 +35,7 @@ def translate_path(
     output_dir: Annotated[
         Optional[str], typer.Argument(help="The directory for translate path")
     ] = "/home/amaozhao/Downloads/translation",
-    service: str = "google",
+    service: str = "local",
 ):
     translator = Translator(service=service)
     translator.run(input_dir, output_dir)
