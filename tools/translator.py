@@ -56,7 +56,7 @@ class Translator:
             if len(chunks) != len(translations):
                 for t in chunks:
                     _translated = self.translate_text(t.content)
-                    _translated = self.replace(_translated)
+                    _translated = self.replace(_translated.strip())
                     if not _translated:
                         continue
                     new_sub = srt.Subtitle(
@@ -183,7 +183,7 @@ class Translator:
             time.sleep(0.5)
         except Exception as e:
             print(f"翻译出错: {e}")
-            time.sleep(0.5)
+            time.sleep(10)
             translation = text
         return translation
 
