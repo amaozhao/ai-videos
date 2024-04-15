@@ -69,6 +69,7 @@ class Translator:
             else:
                 for idx, t in enumerate(translations):
                     t = self.replace(t)
+                    t.strip()
                     new_sub = srt.Subtitle(
                         index=subs[idx + ch_idx * self.chunk_size].index,
                         start=subs[idx + ch_idx * self.chunk_size].start,
