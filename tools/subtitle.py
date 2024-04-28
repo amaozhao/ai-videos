@@ -16,6 +16,7 @@ class SubtitleProcessor:
             "DID": "D-ID",
             "Kyber": "Kaiber",
             "Kyber AI": "Kaiber AI",
+            "Me Journey": "MidJourney",
             "MeetJourney": "MidJourney",
             "Meetjourney": "MidJourney",
             "cant": "can't",

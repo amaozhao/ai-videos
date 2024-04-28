@@ -14,7 +14,7 @@ from whisperx.utils import (
     LANGUAGES_WITHOUT_SPACES,
     TO_LANGUAGE_CODE,
     SubtitlesWriter,
-    # get_writer,
+    get_writer,
 )
 
 
@@ -152,8 +152,8 @@ class Transcriber:
         compression_ratio_threshold=2.4,
         logprob_threshold=-1.0,
         no_speech_threshold=0.6,
-        max_line_width=180,
-        max_line_count=30,
+        max_line_width=None,
+        max_line_count=None,
         highlight_words=False,
         segment_resolution="sentence",
         threads=4,
@@ -345,8 +345,8 @@ class Transcriber:
 
         # >> Write
         for result, audio_path in results:
-            # writer = get_writer(self.output_format, os.path.dirname(audio_path))
-            writer = WriteSRT(os.path.dirname(audio_path))
+            writer = get_writer(self.output_format, os.path.dirname(audio_path))
+            # writer = WriteSRT(os.path.dirname(audio_path))
             result["language"] = self.align_language
             writer(result, audio_path, writer_args)
 

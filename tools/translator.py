@@ -55,7 +55,7 @@ class Translator:
             translations = translated_chunks.split(self.delimiter)
             if len(chunks) != len(translations):
                 for t in chunks:
-                    _translated = self.translate_text(t.content)
+                    _translated = self.translate_text(t.content) or ''
                     _translated = self.replace(_translated.strip())
                     if not _translated:
                         continue
