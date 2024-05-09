@@ -71,12 +71,11 @@ class Translator:
                 for idx, t in enumerate(translations):
                     t = t.split('\n')[0]
                     t = self.replace(t)
-                    t.strip()
                     new_sub = srt.Subtitle(
                         index=subs[idx + ch_idx * self.chunk_size].index,
                         start=subs[idx + ch_idx * self.chunk_size].start,
                         end=subs[idx + ch_idx * self.chunk_size].end,
-                        content=t + "\n" + subs[idx + ch_idx * self.chunk_size].content,
+                        content=t.strip() + "\n" + subs[idx + ch_idx * self.chunk_size].content,
                     )
                     output_subs.append(new_sub)
 
