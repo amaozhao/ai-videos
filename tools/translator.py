@@ -12,7 +12,7 @@ class Translator:
         self.config = dotenv_values(".env")
         self.dl_key = self.config.get("DEEPL_KEY")
         self.service = service or "kimi"
-        self.chunk_size = 10
+        self.chunk_size = 5
         self.delimiter = "||"
 
     def run(self, input_dir, output_dir):
@@ -56,6 +56,7 @@ class Translator:
             if len(chunks) != len(translations):
                 for t in chunks:
                     _translated = self.translate_text(t.content) or ''
+                    _translated = _translated.split('\n')[0]
                     _translated = self.replace(_translated.strip())
                     if not _translated:
                         continue
@@ -68,6 +69,7 @@ class Translator:
                     output_subs.append(new_sub)
             else:
                 for idx, t in enumerate(translations):
+                    t = t.split('\n')[0]
                     t = self.replace(t)
                     t.strip()
                     new_sub = srt.Subtitle(
