@@ -97,5 +97,28 @@ def separate_path(
     separator.run(input_path=input_path, output_path=output_path)
 
 
+@app.command("chain-all")
+def chain_all(
+    input_path: Annotated[
+        str, typer.Argument(help="The directory for transcribe input path")
+    ],
+    model: Annotated[
+        Optional[str], typer.Argument(help="The transcribe model type")
+    ] = "medium",
+    reset_dir: Annotated[
+        Optional[str], typer.Argument(help="The directory for reset path")
+    ] = "/home/amaozhao/Downloads/tt",
+    output_dir: Annotated[
+        Optional[str], typer.Argument(help="The directory for translate path")
+    ] = "/home/amaozhao/Downloads/translation",
+):
+    transcriber = Transcriber(model=model)
+    transcriber.run(input_path)
+    processor = SubtitleProcessor()
+    processor.run(input_path, reset_dir)
+    translator = Translator(service='deepseek')
+    translator.run(reset_dir, output_dir)
+
+
 if __name__ == "__main__":
     app()
